@@ -12,7 +12,7 @@ compatibility_date = "2026-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "clinic-ai-db"
-database_id = "PASTE-DATABASE-ID-HERE"
+database_id = "27a4571f-f8fd-41ff-a4b1-ce5ddc98ff55"
 
 # ── Scheduled reminders ───────────────────────────────────────
 # Runs every hour; sends a reminder SMS for appointments ~24h away.
