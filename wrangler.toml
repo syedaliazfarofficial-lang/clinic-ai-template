@@ -1,0 +1,24 @@
+name = "clinic-ai-assistant"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# ── D1 Database ──────────────────────────────────────────────
+# If you're using the "Deploy to Cloudflare" button, this gets created and
+# filled in automatically — you don't need to touch this file at all.
+#
+# If deploying manually instead:
+#   npx wrangler d1 create clinic-ai-db
+#   (then paste the database_id it prints below)
+[[d1_databases]]
+binding = "DB"
+database_name = "clinic-ai-db"
+database_id = "PASTE-DATABASE-ID-HERE"
+
+# ── Scheduled reminders ───────────────────────────────────────
+# Runs every hour; sends a reminder SMS for appointments ~24h away.
+[triggers]
+crons = ["0 * * * *"]
+
+# That's it. Clinic name, Twilio, Resend, VAPI secret, and the admin
+# password are ALL set from inside the dashboard after first deploy —
+# no `wrangler secret put` commands needed for this app.
