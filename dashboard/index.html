@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Front Desk — Clinic Dashboard</title>
+<style>
+  :root{
+    --ink:#132A29; --paper:#F6F3EC; --teal:#0F4C43; --teal-deep:#0A332C;
+    --gold:#D6A536; --line:#DAD4C4; --danger:#B4432E; --ok:#3E7A56;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Iowan Old Style','Georgia',serif;}
+  .topbar{background:var(--teal-deep);color:var(--paper);padding:20px 32px;display:flex;align-items:baseline;justify-content:space-between;border-bottom:3px solid var(--gold);}
+  .topbar h1{font-size:20px;letter-spacing:0.04em;margin:0;font-weight:600;}
+  .topbar .tag{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);cursor:pointer;}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 24px 60px;}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:2px;padding:16px 18px;}
+  .stat .num{font-size:32px;font-weight:700;color:var(--teal);line-height:1;}
+  .stat .label{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6B6255;margin-top:6px;}
+  .stat.warn .num{color:var(--danger);}
+  section{margin-bottom:40px;}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:0.1em;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--teal-deep);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:0;}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;}
+  th{text-align:left;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#6B6255;padding:10px 8px;border-bottom:1px solid var(--line);}
+  td{padding:10px 8px;border-bottom:1px solid var(--line);}
+  tr:hover td{background:#FBF9F4;}
+  .badge{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;padding:3px 9px;border-radius:20px;display:inline-block;}
+  .badge.booked{background:#E4EFE8;color:var(--ok);}
+  .badge.missed{background:#F6E4DF;color:var(--danger);}
+  .badge.answered{background:#E4EFE8;color:var(--ok);}
+  .badge.cancelled, .badge.no_show{background:#F0E9E2;color:#8A7B60;}
+  .empty{color:#8A7B60;font-style:italic;padding:20px 8px;}
+  #gate{max-width:400px;margin:100px auto;text-align:center;}
+  #gate input, .form-grid input, .search-row input, .settings-row input{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:2px;margin:8px 0;font-family:'Helvetica Neue',Arial,sans-serif;}
+  #gate button, .refresh{background:var(--teal);color:#fff;border:none;padding:10px 20px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;letter-spacing:0.04em;border-radius:2px;cursor:pointer;}
+  #gate button:hover, .refresh:hover{background:var(--teal-deep);}
+  .refresh-row{display:flex;justify-content:flex-end;margin:16px 0;gap:10px;}
+  .settings-box{background:#fff;border:1px solid var(--line);border-radius:2px;padding:20px 22px;margin-top:14px;}
+  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;gap:16px;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-row input{margin:0;width:260px;}
+  .settings-group-title{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold);margin:18px 0 4px;}
+  .switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#D9D2C2;transition:0.2s;border-radius:24px;}
+  .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:white;transition:0.2s;border-radius:50%;}
+  input:checked + .slider{background:var(--ok);}
+  input:checked + .slider:before{transform:translateX(18px);}
+  .action-btn{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;padding:4px 10px;margin-right:6px;border-radius:2px;border:1px solid var(--line);background:#fff;cursor:pointer;}
+  .action-btn:hover{background:#F0EBE0;}
+  .action-btn.danger{color:var(--danger);border-color:var(--danger);}
+  .save-msg{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:var(--ok);margin-left:12px;}
+  .form-box{background:#fff;border:1px solid var(--line);border-radius:2px;padding:18px 20px;margin-bottom:16px;display:none;}
+  .form-box.open{display:block;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .search-row{display:flex;gap:10px;margin-bottom:12px;}
+  .hint{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8A7B60;margin-top:4px;}
+  .webhook-box{background:#FBF9F4;border:1px dashed var(--line);padding:10px 12px;font-family:monospace;font-size:12px;word-break:break-all;margin:6px 0;}
+  #settingsPanel{display:none;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1 style="color:var(--teal-deep)">Front Desk Dashboard</h1>
+
+  <div id="setupForm" style="display:none;">
+    <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6B6255;">First time here — create your admin password to finish setup.</p>
+    <input type="text" id="setupClinicName" placeholder="Clinic name" />
+    <input type="password" id="setupPassword" placeholder="Create a password (min 8 characters)" />
+    <button onclick="doSetup()">Create & Continue</button>
+    <p id="setupError" style="color:var(--danger);font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;"></p>
+  </div>
+
+  <div id="loginForm" style="display:none;">
+    <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6B6255;">Enter your admin password to continue</p>
+    <input type="password" id="loginPassword" placeholder="Admin password" />
+    <button onclick="doLogin()">Log In</button>
+    <p id="loginError" style="color:var(--danger);font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;"></p>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="topbar">
+    <h1 id="clinicName">Front Desk</h1>
+    <span class="tag" onclick="toggleSettingsPanel()">Backend Settings</span>
+  </div>
+  <div class="wrap">
+
+    <div id="settingsPanel">
+      <section>
+        <h2>Backend Settings</h2>
+        <div class="settings-box">
+
+          <div class="settings-group-title">Clinic</div>
+          <div class="settings-row"><span>Clinic name</span><input type="text" id="setClinicName" /></div>
+          <div class="settings-row"><span>Timezone</span><input type="text" id="setTimezone" placeholder="America/Toronto" /></div>
+
+          <div class="settings-group-title">Twilio (SMS)</div>
+          <div class="settings-row"><span>Account SID</span><input type="text" id="setTwilioSid" placeholder="ACxxxxxxxx" /></div>
+          <div class="settings-row"><span>Auth Token</span><input type="password" id="setTwilioToken" placeholder="••••••••" /></div>
+          <div class="settings-row"><span>From Number</span><input type="text" id="setTwilioFrom" placeholder="+14155551234" /></div>
+
+          <div class="settings-group-title">Resend (Email)</div>
+          <div class="settings-row"><span>API Key</span><input type="password" id="setResendKey" placeholder="re_xxxxxxxx" /></div>
+          <div class="settings-row"><span>From Email</span><input type="text" id="setResendFrom" placeholder="notifications@yourdomain.com" /></div>
+
+          <div class="settings-group-title">VAPI</div>
+          <div class="settings-row"><span>Webhook URL to paste into VAPI</span></div>
+          <div class="webhook-box" id="webhookUrlBox"></div>
+          <div class="settings-row"><span>Custom header VAPI must send: <code>x-vapi-secret</code></span></div>
+          <div class="webhook-box" id="vapiSecretBox"></div>
+          <div class="refresh-row" style="margin-top:0;">
+            <button class="action-btn" onclick="regenerateVapiSecret()">Regenerate Secret</button>
+          </div>
+          <p class="hint">Add a function tool named <code>book_appointment</code> in your VAPI assistant with parameters: patient_name, phone, date_time, reason.</p>
+
+          <div class="settings-group-title">Notifications</div>
+          <div class="settings-row"><span>Email staff on booking/cancel/reschedule</span><label class="switch"><input type="checkbox" id="emailToggle"><span class="slider"></span></label></div>
+          <div class="settings-row"><span>SMS patient on booking/cancel/reschedule</span><label class="switch"><input type="checkbox" id="smsToggle"><span class="slider"></span></label></div>
+          <div class="settings-row"><span>Staff notification email</span><input type="email" id="notifyEmail" placeholder="frontdesk@clinic.com" /></div>
+
+          <div class="refresh-row">
+            <span class="save-msg" id="saveMsg" style="display:none;">Saved.</span>
+            <button class="refresh" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="mainPanel">
+      <div class="stats" id="stats"></div>
+
+      <section>
+        <h2>Upcoming Appointments</h2>
+        <div class="refresh-row" style="margin-top:14px;">
+          <button class="refresh" onclick="toggleForm()">+ Add Appointment</button>
+          <button class="refresh" onclick="exportCSV()">Export CSV</button>
+          <button class="refresh" onclick="loadAll()">Refresh</button>
+        </div>
+
+        <div class="form-box" id="apptForm">
+          <div class="form-grid">
+            <input type="text" id="fName" placeholder="Patient name" />
+            <input type="tel" id="fPhone" placeholder="Phone (+1...)" />
+            <input type="datetime-local" id="fDateTime" />
+            <input type="text" id="fReason" placeholder="Reason (optional)" />
+          </div>
+          <div class="refresh-row"><button class="refresh" onclick="submitNewAppointment()">Save Appointment</button></div>
+        </div>
+
+        <div class="search-row"><input type="text" id="searchBox" placeholder="Search by patient name or phone..." oninput="filterAppointments()" /></div>
+
+        <table id="apptTable">
+          <thead><tr><th>Date/Time</th><th>Patient</th><th>Phone</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Recent Calls</h2>
+        <table id="callsTable">
+          <thead><tr><th>Time</th><th>Caller</th><th>Status</th><th>Duration</th><th>Summary</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── EDIT THIS ONE LINE PER CLIENT (the only manual edit left) ──
+  const WORKER_URL = "https://CHANGE-ME.your-subdomain.workers.dev";
+  // ─────────────────────────────────────────────────────────────
+
+  let allAppointments = [];
+
+  async function raw(path, method='GET', body=null, withAuth=true){
+    const headers = { 'Content-Type': 'application/json' };
+    if(withAuth){
+      const token = localStorage.getItem('sessionToken');
+      if(token) headers['Authorization'] = 'Bearer ' + token;
+    }
+    const res = await fetch(WORKER_URL + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const data = await res.json().catch(() => ({}));
+    if(res.status === 401 && withAuth){
+      localStorage.removeItem('sessionToken');
+      showGate();
+    }
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  async function api(path, method='GET', body=null){
+    const { data } = await raw(path, method, body, true);
+    return data;
+  }
+
+  function showGate(){
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('gate').style.display = 'block';
+    checkSetupStatus();
+  }
+
+  async function checkSetupStatus(){
+    const { data } = await raw('/api/setup-status', 'GET', null, false);
+    if(data.setup_complete){
+      document.getElementById('setupForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+    } else {
+      document.getElementById('setupForm').style.display = 'block';
+      document.getElementById('loginForm').style.display = 'none';
+    }
+  }
+
+  async function doSetup(){
+    const password = document.getElementById('setupPassword').value;
+    const clinic_name = document.getElementById('setupClinicName').value.trim();
+    const { ok, data } = await raw('/api/setup', 'POST', { password, clinic_name }, false);
+    if(!ok){ document.getElementById('setupError').textContent = data.error || 'Setup failed.'; return; }
+    localStorage.setItem('sessionToken', data.token);
+    enterApp();
+  }
+
+  async function doLogin(){
+    const password = document.getElementById('loginPassword').value;
+    const { ok, data } = await raw('/api/login', 'POST', { password }, false);
+    if(!ok){ document.getElementById('loginError').textContent = data.error || 'Login failed.'; return; }
+    localStorage.setItem('sessionToken', data.token);
+    enterApp();
+  }
+
+  function enterApp(){
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadAll();
+  }
+
+  function toggleSettingsPanel(){
+    const panel = document.getElementById('settingsPanel');
+    const main = document.getElementById('mainPanel');
+    const opening = panel.style.display !== 'block';
+    panel.style.display = opening ? 'block' : 'none';
+    main.style.display = opening ? 'none' : 'block';
+    if(opening) loadSettingsIntoForm();
+  }
+
+  async function loadSettingsIntoForm(){
+    const s = await api('/api/settings');
+    document.getElementById('setClinicName').value = s.clinic_name || '';
+    document.getElementById('setTimezone').value = s.clinic_timezone || '';
+    document.getElementById('setTwilioSid').value = s.twilio_account_sid || '';
+    document.getElementById('setTwilioToken').value = s.twilio_auth_token || '';
+    document.getElementById('setTwilioFrom').value = s.twilio_from_number || '';
+    document.getElementById('setResendKey').value = s.resend_api_key || '';
+    document.getElementById('setResendFrom').value = s.resend_from_email || '';
+    document.getElementById('emailToggle').checked = !!s.email_enabled;
+    document.getElementById('smsToggle').checked = !!s.sms_enabled;
+    document.getElementById('notifyEmail').value = s.notify_email || '';
+    document.getElementById('webhookUrlBox').textContent = WORKER_URL + '/webhook/vapi';
+    document.getElementById('vapiSecretBox').textContent = s.vapi_webhook_secret || '(not set)';
+    document.getElementById('clinicName').textContent = (s.clinic_name || 'Front Desk') + ' · Front Desk';
+  }
+
+  async function saveSettings(){
+    await api('/api/settings', 'POST', {
+      clinic_name: document.getElementById('setClinicName').value.trim(),
+      clinic_timezone: document.getElementById('setTimezone').value.trim(),
+      twilio_account_sid: document.getElementById('setTwilioSid').value.trim(),
+      twilio_auth_token: document.getElementById('setTwilioToken').value.trim(),
+      twilio_from_number: document.getElementById('setTwilioFrom').value.trim(),
+      resend_api_key: document.getElementById('setResendKey').value.trim(),
+      resend_from_email: document.getElementById('setResendFrom').value.trim(),
+      notify_email: document.getElementById('notifyEmail').value.trim(),
+      email_enabled: document.getElementById('emailToggle').checked,
+      sms_enabled: document.getElementById('smsToggle').checked
+    });
+    const msg = document.getElementById('saveMsg');
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 2000);
+    document.getElementById('clinicName').textContent = document.getElementById('setClinicName').value + ' · Front Desk';
+  }
+
+  async function regenerateVapiSecret(){
+    if(!confirm('This will invalidate the old secret — update it in VAPI right after.')) return;
+    const res = await api('/api/settings/regenerate-vapi-secret', 'POST');
+    document.getElementById('vapiSecretBox').textContent = res.vapi_webhook_secret;
+  }
+
+  function toggleForm(){ document.getElementById('apptForm').classList.toggle('open'); }
+
+  async function submitNewAppointment(){
+    const patient_name = document.getElementById('fName').value.trim();
+    const phone = document.getElementById('fPhone').value.trim();
+    const date_time = document.getElementById('fDateTime').value;
+    const reason = document.getElementById('fReason').value.trim();
+    if(!patient_name || !phone || !date_time){ alert('Name, phone, and date/time are required.'); return; }
+    const res = await api('/api/appointments', 'POST', { patient_name, phone, date_time, reason });
+    if(res.error){ alert(res.error); return; }
+    document.getElementById('fName').value = '';
+    document.getElementById('fPhone').value = '';
+    document.getElementById('fDateTime').value = '';
+    document.getElementById('fReason').value = '';
+    document.getElementById('apptForm').classList.remove('open');
+    loadAll();
+  }
+
+  function badge(status){ return `<span class="badge ${status}">${status.replace('_',' ')}</span>`; }
+
+  function renderAppointments(list){
+    const apptBody = document.querySelector('#apptTable tbody');
+    apptBody.innerHTML = list.length ? list.map(a => `
+      <tr>
+        <td>${new Date(a.date_time).toLocaleString()}</td>
+        <td>${a.name}</td>
+        <td>${a.phone}</td>
+        <td>${a.reason || '—'}</td>
+        <td>${badge(a.status)}</td>
+        <td>${a.status === 'booked' ? `
+            <button class="action-btn" onclick="rescheduleAppointment(${a.id})">Reschedule</button>
+            <button class="action-btn danger" onclick="cancelAppointment(${a.id})">Cancel</button>
+          ` : '—'}</td>
+      </tr>`).join('') : `<tr><td colspan="6" class="empty">No appointments match.</td></tr>`;
+  }
+
+  function filterAppointments(){
+    const q = document.getElementById('searchBox').value.toLowerCase();
+    renderAppointments(allAppointments.filter(a => a.name.toLowerCase().includes(q) || a.phone.includes(q)));
+  }
+
+  async function exportCSV(){
+    const token = localStorage.getItem('sessionToken');
+    const res = await fetch(WORKER_URL + '/api/export', { headers: { 'Authorization': 'Bearer ' + token } });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'appointments_export.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function cancelAppointment(id){
+    if(!confirm('Cancel this appointment? The patient will be notified.')) return;
+    await api(`/api/appointments/${id}`, 'PATCH', { status: 'cancelled' });
+    loadAll();
+  }
+
+  async function rescheduleAppointment(id){
+    const newTime = prompt('New date/time (e.g. 2026-07-30T14:00):');
+    if(!newTime) return;
+    await api(`/api/appointments/${id}`, 'PUT', { date_time: newTime });
+    loadAll();
+  }
+
+  async function loadAll(){
+    try {
+      const s = await api('/api/settings');
+      document.getElementById('clinicName').textContent = (s.clinic_name || 'Front Desk') + ' · Front Desk';
+
+      const summary = await api('/api/summary');
+      document.getElementById('stats').innerHTML = `
+        <div class="stat"><div class="num">${summary.calls_today}</div><div class="label">Calls Today</div></div>
+        <div class="stat warn"><div class="num">${summary.missed_today}</div><div class="label">Missed Today</div></div>
+        <div class="stat"><div class="num">${summary.booked_today}</div><div class="label">Booked Today</div></div>
+        <div class="stat"><div class="num">${summary.upcoming_appointments}</div><div class="label">Upcoming</div></div>`;
+
+      const appts = await api('/api/appointments');
+      allAppointments = appts.appointments || [];
+      renderAppointments(allAppointments);
+
+      const calls = await api('/api/calls');
+      const callsBody = document.querySelector('#callsTable tbody');
+      const callList = calls.calls || [];
+      callsBody.innerHTML = callList.length ? callList.map(c => `
+        <tr>
+          <td>${new Date(c.created_at).toLocaleString()}</td>
+          <td>${c.caller_phone}</td>
+          <td>${badge(c.call_status)}</td>
+          <td>${c.duration_seconds}s</td>
+          <td>${c.transcript_summary || '—'}</td>
+        </tr>`).join('') : `<tr><td colspan="5" class="empty">No calls logged yet.</td></tr>`;
+    } catch(e){ console.error(e); }
+  }
+
+  // ── Init ──
+  if(localStorage.getItem('sessionToken')){
+    enterApp();
+  } else {
+    showGate();
+  }
+</script>
+</body>
+</html>
