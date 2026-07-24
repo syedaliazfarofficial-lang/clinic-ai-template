@@ -4,78 +4,110 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Front Desk — Clinic Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --primary:#0D7C66; --primary-dark:#065A48; --primary-light:#E8F5F2;
+  --primary-ghost:rgba(13,124,102,.08);
   --accent:#2D9CDB; --bg:#F5F7FA; --card:#fff; --text:#1A202C;
-  --muted:#718096; --border:#E2E8F0; --shadow:0 1px 3px rgba(0,0,0,.08);
+  --muted:#718096; --border:#E2E8F0; --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 30px rgba(0,0,0,.1);
   --success:#38A169; --warning:#D69E2E; --danger:#E53E3E;
-  --radius:10px; --radius-sm:6px;
+  --radius:12px; --radius-sm:8px;
 }
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── Animations ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-8px) scale(.96)}}
+.anim-fade{animation:fadeIn .35s ease both}
+.anim-slide{animation:slideIn .35s ease both}
+.stagger>*{animation:fadeIn .35s ease both}
+.stagger>*:nth-child(1){animation-delay:0ms}
+.stagger>*:nth-child(2){animation-delay:60ms}
+.stagger>*:nth-child(3){animation-delay:120ms}
+.stagger>*:nth-child(4){animation-delay:180ms}
 
 /* ── Navbar ── */
-.navbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.navbar .logo{display:flex;align-items:center;gap:10px}
-.navbar .logo svg{width:28px;height:28px}
-.navbar .logo h1{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.01em}
-.navbar .logo h1 span{color:var(--primary)}
-.navbar .nav-actions{display:flex;align-items:center;gap:8px}
-.navbar .nav-actions button{background:none;border:1px solid var(--border);padding:7px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:.15s}
-.navbar .nav-actions button:hover{background:var(--bg);color:var(--text)}
-.navbar .nav-actions button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
-.navbar .nav-actions button.primary:hover{background:var(--primary-dark)}
+.navbar{background:rgba(255,255,255,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:box-shadow .2s}
+.navbar.scrolled{box-shadow:var(--shadow-sm)}
+.navbar .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.navbar .brand svg{width:28px;height:28px;transition:transform .2s}
+.navbar .brand:hover svg{transform:rotate(-6deg) scale(1.05)}
+.navbar .brand h1{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.navbar .brand h1 span{color:var(--primary)}
+.navbar nav{display:flex;align-items:center;gap:6px}
+.navbar nav button{background:none;border:1px solid transparent;padding:8px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.navbar nav button:hover{background:var(--primary-ghost);color:var(--primary);border-color:var(--primary-ghost)}
 
-/* ── Main layout ── */
-.main{max-width:1200px;margin:0 auto;padding:24px 32px 60px}
+/* ── Main ── */
+.main{max-width:1200px;margin:0 auto;padding:28px 32px 60px;animation:fadeIn .4s ease}
 
 /* ── Stats ── */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:28px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;gap:16px;transition:box-shadow .15s}
-.stat-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.06)}
-.stat-card .icon{width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;align-items:center;gap:16px;transition:all .2s;cursor:default;animation:slideUp .4s ease both}
+.stat-card:nth-child(1){animation-delay:0ms}
+.stat-card:nth-child(2){animation-delay:80ms}
+.stat-card:nth-child(3){animation-delay:160ms}
+.stat-card:nth-child(4){animation-delay:240ms}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:transparent}
+.stat-card .icon{width:48px;height:48px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;transition:transform .2s}
+.stat-card:hover .icon{transform:scale(1.08)}
 .stat-card .icon.teal{background:var(--primary-light);color:var(--primary)}
 .stat-card .icon.red{background:#FDE8E8;color:var(--danger)}
 .stat-card .icon.green{background:#E6F7EC;color:var(--success)}
-.stat-card .info .num{font-size:26px;font-weight:700;line-height:1.2}
-.stat-card .info .label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.03em}
+.stat-card .info .num{font-size:28px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.stat-card .info .label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 
 /* ── Section cards ── */
-.section-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:24px;overflow:hidden}
-.section-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.section-header h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-.section-header .actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:.12s;text-decoration:none;white-space:nowrap}
-.btn:hover{background:var(--bg)}
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:24px;overflow:hidden;transition:box-shadow .2s;animation:slideUp .5s ease both}
+.section-card:hover{box-shadow:var(--shadow-sm)}
+.section-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.section-header h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all .15s;text-decoration:none;white-space:nowrap;font-family:'Inter',sans-serif}
+.btn:hover{background:var(--bg);border-color:#CBD5E0;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
 .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
-.btn-primary:hover{background:var(--primary-dark)}
-.btn-sm{padding:4px 10px;font-size:12px}
+.btn-primary:hover{background:var(--primary-dark);border-color:var(--primary-dark);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
 .btn-danger{color:var(--danger);border-color:var(--danger)}
-.btn-danger:hover{background:#FDE8E8}
+.btn-danger:hover{background:#FDE8E8;color:var(--danger)}
 .btn-success{color:var(--success);border-color:var(--success)}
-.btn-success:hover{background:#E6F7EC}
+.btn-success:hover{background:#E6F7EC;color:var(--success)}
 .btn-warning{color:var(--warning);border-color:var(--warning)}
-.btn-warning:hover{background:#FEF5E7}
+.btn-warning:hover{background:#FEF5E7;color:var(--warning)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn-ghost:hover{background:var(--primary-ghost);color:var(--primary)}
+.btn-icon{padding:6px 8px;font-size:16px;line-height:1}
 
 /* ── Table ── */
 .table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+table{width:100%;border-collapse:separate;border-spacing:0}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#FAFBFC;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;transition:background .12s}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#FAFBFC}
 td .name{font-weight:600;color:var(--text)}
-td .phone{font-size:12px;color:var(--muted)}
-td .service-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;background:var(--primary-light);color:var(--primary)}
-td .duration{font-size:12px;color:var(--muted)}
-.empty-state{padding:40px 16px;text-align:center;color:var(--muted);font-size:14px}
+td .phone{font-size:12px;color:var(--muted);margin-top:1px}
+td .service-tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;background:var(--primary-light);color:var(--primary)}
+td .duration{font-size:12px;color:var(--muted);display:block;margin-top:2px}
+.empty-state{padding:48px 16px;text-align:center;color:var(--muted)}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;opacity:.6}
+.empty-state p{font-size:14px;margin-bottom:4px}
+.empty-state .sub{font-size:13px;color:var(--muted);opacity:.7}
 
 /* ── Badges ── */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize}
-.badge::before{content:'';width:6px;height:6px;border-radius:50%}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize}
+.badge::before{content:'';width:7px;height:7px;border-radius:50%}
 .badge.booked{background:#E6F7EC;color:var(--success)}
-.badge.booked::before{background:var(--success)}
+.badge.booked::before{background:var(--success);box-shadow:0 0 6px rgba(56,161,105,.4)}
 .badge.cancelled{background:#FEF5E7;color:var(--warning)}
 .badge.cancelled::before{background:var(--warning)}
 .badge.completed{background:#EBF4FF;color:var(--accent)}
@@ -87,94 +119,123 @@ td .duration{font-size:12px;color:var(--muted)}
 .badge.missed{background:#FDE8E8;color:var(--danger)}
 .badge.missed::before{background:var(--danger)}
 
-/* ── Form / Filter bar ── */
-.filter-bar{display:flex;gap:10px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
-.filter-bar input,.filter-bar select{padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--card);color:var(--text);outline:none;transition:.12s}
+/* ── Filter bar ── */
+.filter-bar{display:flex;gap:10px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.filter-bar input,.filter-bar select{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--card);color:var(--text);outline:none;transition:all .15s;font-family:'Inter',sans-serif}
 .filter-bar input:focus,.filter-bar select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
 .filter-bar input[type=date]{width:140px}
-.filter-bar .sep{color:var(--border);font-size:18px;font-weight:300}
-.filter-bar .search-wrap{position:relative;flex:1;min-width:180px}
-.filter-bar .search-wrap input{padding-left:32px;width:100%}
-.filter-bar .search-wrap .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.filter-bar .sep{color:var(--border);font-size:16px;font-weight:300}
+.filter-bar .search-wrap{position:relative;flex:1;min-width:160px}
+.filter-bar .search-wrap input{padding-left:34px;width:100%}
+.filter-bar .search-wrap .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;opacity:.6}
 
 /* ── Collapsible form ── */
-.form-collapse{display:none;padding:20px;border-bottom:1px solid var(--border)}
+.form-collapse{display:none;padding:20px;border-bottom:1px solid var(--border);animation:fadeIn .2s ease}
 .form-collapse.open{display:block}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-.form-grid input,.form-grid select{padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;background:var(--card)}
+.form-grid input,.form-grid select{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;background:var(--card);font-family:'Inter',sans-serif;transition:border-color .15s}
 .form-grid input:focus,.form-grid select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
 .form-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 
 /* ── Settings sidebar ── */
 .settings-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:200;display:none;animation:fadeIn .2s}
 .settings-overlay.open{display:block}
-.settings-panel{position:fixed;top:0;right:0;width:540px;max-width:100vw;height:100%;background:var(--card);z-index:201;transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.1)}
+.settings-panel{position:fixed;top:0;right:0;width:540px;max-width:100vw;height:100%;background:var(--card);z-index:201;transform:translateX(100%);transition:transform .3s cubic-bezier(.22,1,.36,1);overflow-y:auto;box-shadow:-4px 0 30px rgba(0,0,0,.12)}
 .settings-panel.open{transform:translateX(0)}
-.settings-panel .panel-header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;z-index:2}
+.settings-panel .panel-header{position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;z-index:2}
 .settings-panel .panel-header h2{font-size:15px;font-weight:600}
-.settings-panel .panel-header .close-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:4px}
-.settings-panel .panel-header .close-btn:hover{color:var(--text)}
-.settings-panel .panel-body{padding:8px 24px 40px}
-.settings-group{margin-bottom:20px}
-.settings-group-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
-.settings-row{display:flex;align-items:center;padding:10px 0;gap:12px}
-.settings-row label{font-size:13px;color:var(--text);min-width:130px;flex-shrink:0}
-.settings-row input,.settings-row select{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none}
+.settings-panel .panel-header .close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:4px 8px;border-radius:6px;transition:all .15s}
+.settings-panel .panel-header .close-btn:hover{background:var(--bg);color:var(--text)}
+.settings-panel .panel-body{padding:8px 24px 32px}
+.settings-group{margin-bottom:16px}
+.settings-group-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.settings-row{display:flex;align-items:center;padding:8px 0;gap:12px}
+.settings-row label{font-size:13px;color:var(--text);min-width:120px;flex-shrink:0}
+.settings-row input,.settings-row select{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s}
 .settings-row input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
 .settings-row .switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0}
 .settings-row .switch input{opacity:0;width:0;height:0}
 .settings-row .slider{position:absolute;cursor:pointer;inset:0;background:#CBD5E0;transition:.2s;border-radius:22px}
-.settings-row .slider::before{position:absolute;content:'';height:16px;width:16px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
+.settings-row .slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .settings-row input:checked+.slider{background:var(--primary)}
 .settings-row input:checked+.slider::before{transform:translateX(16px)}
-.webhook-box{background:#F7FAFC;border:1px dashed var(--border);padding:10px 12px;font-family:ui-monospace,monospace;font-size:12px;word-break:break-all;border-radius:var(--radius-sm);margin:4px 0}
+.webhook-box{background:#F7FAFC;border:1px dashed var(--border);padding:10px 12px;font-family:ui-monospace,'SF Mono',monospace;font-size:12px;word-break:break-all;border-radius:var(--radius-sm);margin:4px 0;color:var(--muted)}
 .settings-footer{padding:16px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:8px}
-.save-msg{font-size:13px;color:var(--success);font-weight:500;display:none}
 
-/* ── Gate (login/setup) ── */
-.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary-light) 0%,var(--bg) 100%);padding:24px}
-.gate-card{background:var(--card);border-radius:var(--radius);padding:40px;width:400px;max-width:100%;box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}
-.gate-card .logo{width:56px;height:56px;background:var(--primary);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-.gate-card h1{font-size:20px;font-weight:700;margin-bottom:4px}
-.gate-card p{font-size:13px;color:var(--muted);margin-bottom:20px}
-.gate-card .input-group{text-align:left;margin-bottom:14px}
-.gate-card .input-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
-.gate-card .input-group input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none}
+/* ── Modal ── */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:300;display:none;animation:fadeIn .15s}
+.modal-overlay.open{display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--card);border-radius:var(--radius);width:460px;max-width:100%;box-shadow:var(--shadow-lg);animation:slideUp .25s ease;max-height:90vh;overflow-y:auto}
+.modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-size:17px;font-weight:600}
+.modal-header .close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:4px 8px;border-radius:6px;transition:all .15s}
+.modal-header .close-btn:hover{background:var(--bg);color:var(--text)}
+.modal-body{padding:16px 24px 24px}
+.modal-body .form-grid{grid-template-columns:1fr 1fr}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:0 24px 20px}
+
+/* ── Toast ── */
+.toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;animation:toastIn .25s ease;pointer-events:auto;max-width:380px}
+.toast.removing{animation:toastOut .2s ease forwards}
+.toast .toast-icon{font-size:18px;flex-shrink:0}
+.toast.success .toast-icon{color:var(--success)}
+.toast.error .toast-icon{color:var(--danger)}
+.toast.info .toast-icon{color:var(--accent)}
+
+/* ── Gate ── */
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary-light) 0%,#E8F0FE 50%,var(--bg) 100%);padding:24px;animation:fadeIn .4s ease}
+.gate-card{background:rgba(255,255,255,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:var(--radius);padding:44px 40px 36px;width:400px;max-width:100%;box-shadow:var(--shadow-lg);text-align:center;border:1px solid rgba(255,255,255,.5)}
+.gate-card .logo{width:60px;height:60px;background:var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 4px 12px rgba(13,124,102,.25)}
+.gate-card h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.gate-card p{font-size:14px;color:var(--muted);margin-bottom:24px}
+.gate-card .input-group{text-align:left;margin-bottom:16px}
+.gate-card .input-group label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.gate-card .input-group input{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s}
 .gate-card .input-group input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
-.gate-card .btn-primary{width:100%;justify-content:center;padding:11px;font-size:14px;margin-top:4px}
-.gate-card .error{color:var(--danger);font-size:13px;margin-top:10px;display:none}
+.gate-card .btn-primary{width:100%;justify-content:center;padding:12px;font-size:14px;margin-top:4px}
+.gate-card .error{color:var(--danger);font-size:13px;margin-top:12px;display:none;background:#FDE8E8;padding:8px 12px;border-radius:6px}
 
-/* ── Loading spinner ── */
+/* ── Loading ── */
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .5s linear infinite}
 .spinner-lg{width:36px;height:36px;border-width:3px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.7);display:none;align-items:center;justify-content:center;z-index:999}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.75);display:none;align-items:center;justify-content:center;z-index:999;animation:fadeIn .15s}
 .loading-overlay.show{display:flex}
-.loading-overlay .spinner{width:36px;height:36px;border-width:3px}
+.loading-overlay .spinner-lg{width:40px;height:40px;border-width:3px}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#CBD5E0;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#A0AEC0}
 
 /* ── Responsive ── */
 @media(max-width:768px){
   .main{padding:16px}
   .navbar{padding:0 16px}
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .stats .stat-card{padding:14px}
-  .stats .stat-card .icon{width:36px;height:36px;font-size:16px}
-  .stats .stat-card .info .num{font-size:20px}
-  .filter-bar input[type=date]{width:120px}
+  .navbar .brand h1{font-size:15px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:12px}
+  .stat-card{padding:16px}
+  .stat-card .icon{width:40px;height:40px;font-size:18px}
+  .stat-card .info .num{font-size:22px}
+  .filter-bar input[type=date]{width:100px}
   .settings-panel{width:100%}
-  .gate-card{padding:24px;margin:16px}
+  .modal{width:100%;margin:16px;max-height:85vh}
+  .modal-body .form-grid{grid-template-columns:1fr}
+  .gate-card{padding:28px 24px}
 }
 </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loadingOverlay"><div class="spinner spinner-lg"></div></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner-lg"></div></div>
+<div class="toast-container" id="toastContainer"></div>
 
-<!-- ─── GATE (Login / Setup) ─── -->
+<!-- ─── GATE ─── -->
 <div id="gate" class="gate">
   <div class="gate-card">
     <div class="logo">
-      <svg fill="none" viewBox="0 0 28 28" width="28" height="28"><path d="M14 2C7.373 2 2 7.373 2 14s5.373 12 12 12 12-5.373 12-12S20.627 2 14 2z" fill="#fff"/><path d="M14 6a2 2 0 00-2 2v8a2 2 0 004 0V8a2 2 0 00-2-2zm-5 4a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2zm10 0a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2z" fill="var(--primary)"/></svg>
+      <svg fill="none" viewBox="0 0 28 28" width="28" height="28"><circle cx="14" cy="14" r="14" fill="#fff"/><path d="M14 6a2 2 0 00-2 2v8a2 2 0 004 0V8a2 2 0 00-2-2zm-5 4a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2zm10 0a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2z" fill="var(--primary)"/></svg>
     </div>
     <h1>Front Desk</h1>
     <p id="gateDesc">Sign in to manage your clinic.</p>
@@ -198,33 +259,33 @@ td .duration{font-size:12px;color:var(--muted)}
 <div id="app" style="display:none;">
 
   <!-- Navbar -->
-  <nav class="navbar">
-    <div class="logo">
-      <svg fill="none" viewBox="0 0 28 28" width="28" height="28"><circle cx="14" cy="14" r="12" fill="var(--primary)"/><path d="M14 6a2 2 0 00-2 2v8a2 2 0 004 0V8a2 2 0 00-2-2zm-5 4a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2zm10 0a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2z" fill="#fff"/></svg>
+  <nav class="navbar" id="navbar">
+    <a class="brand" href="#">
+      <svg fill="none" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="var(--primary)"/><path d="M14 6a2 2 0 00-2 2v8a2 2 0 004 0V8a2 2 0 00-2-2zm-5 4a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2zm10 0a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2z" fill="#fff"/></svg>
       <h1><span id="clinicName">Front Desk</span></h1>
-    </div>
-    <div class="nav-actions">
+    </a>
+    <nav>
       <button onclick="toggleSettingsPanel()">⚙️ Settings</button>
-    </div>
+    </nav>
   </nav>
 
   <div class="main">
 
     <!-- Stats -->
-    <div class="stats" id="stats"></div>
+    <div class="stats stagger" id="stats"></div>
 
     <!-- Appointments -->
-    <div class="section-card">
+    <div class="section-card" style="animation-delay:80ms">
       <div class="section-header">
         <h2>📅 Appointments</h2>
-        <div class="actions">
-          <button class="btn btn-sm" onclick="toggleForm()">+ Add Appointment</button>
-          <button class="btn btn-sm" onclick="exportCSV()">📥 Export</button>
-          <button class="btn btn-sm btn-primary" onclick="loadAll()">🔄 Refresh</button>
+        <div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="toggleForm()">+ Add</button>
+          <button class="btn btn-sm btn-ghost" onclick="exportCSV()">📥 Export</button>
+          <button class="btn btn-sm btn-primary" onclick="loadAll()">↻ Refresh</button>
         </div>
       </div>
 
-      <!-- New Appointment Form -->
+      <!-- New form -->
       <div class="form-collapse" id="apptForm">
         <div class="form-grid">
           <input type="text" id="fName" placeholder="Patient name" />
@@ -240,16 +301,16 @@ td .duration{font-size:12px;color:var(--muted)}
           <input type="number" id="fDuration" placeholder="Duration (min)" value="30" min="15" max="180" />
         </div>
         <div class="form-footer">
-          <button class="btn btn-sm" onclick="toggleForm()">Cancel</button>
+          <button class="btn btn-sm btn-ghost" onclick="toggleForm()">Cancel</button>
           <button class="btn btn-sm btn-primary" onclick="submitNewAppointment()">Save</button>
         </div>
       </div>
 
-      <!-- Filter + Search -->
+      <!-- Filter -->
       <div class="filter-bar">
-        <input type="date" id="filterFrom" onchange="loadAppointments()" title="From date" />
+        <input type="date" id="filterFrom" onchange="loadAppointments()" title="From" />
         <span class="sep">–</span>
-        <input type="date" id="filterTo" onchange="loadAppointments()" title="To date" />
+        <input type="date" id="filterTo" onchange="loadAppointments()" title="To" />
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
           <input type="text" id="searchBox" placeholder="Search name or phone..." oninput="filterAppointments()" />
@@ -266,7 +327,7 @@ td .duration{font-size:12px;color:var(--muted)}
               <th>Service</th>
               <th>Duration</th>
               <th>Status</th>
-              <th></th>
+              <th style="width:140px;"></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -274,8 +335,8 @@ td .duration{font-size:12px;color:var(--muted)}
       </div>
     </div>
 
-    <!-- Recent Calls -->
-    <div class="section-card">
+    <!-- Calls -->
+    <div class="section-card" style="animation-delay:160ms">
       <div class="section-header">
         <h2>📞 Recent Calls</h2>
       </div>
@@ -298,7 +359,7 @@ td .duration{font-size:12px;color:var(--muted)}
   </div>
 </div>
 
-<!-- ─── SETTINGS SIDEBAR ─── -->
+<!-- ─── SETTINGS ─── -->
 <div class="settings-overlay" id="settingsOverlay" onclick="toggleSettingsPanel()"></div>
 <div class="settings-panel" id="settingsPanel">
   <div class="panel-header">
@@ -309,63 +370,106 @@ td .duration{font-size:12px;color:var(--muted)}
 
     <div class="settings-group">
       <div class="settings-group-title">Clinic Info</div>
-      <div class="settings-row"><label>Clinic name</label><input type="text" id="setClinicName" /></div>
-      <div class="settings-row"><label>Timezone</label><input type="text" id="setTimezone" placeholder="America/Toronto" /></div>
-      <div class="settings-row"><label>Address</label><input type="text" id="setAddress" placeholder="123 Main St, Toronto" /></div>
-      <div class="settings-row"><label>Hours</label><input type="text" id="setHours" placeholder="Mon–Fri 9AM–5PM" /></div>
-      <div class="settings-row"><label>Phone</label><input type="text" id="setClinicPhone" placeholder="+1 (416) 555-0147" /></div>
-      <div class="settings-row"><label>Email</label><input type="email" id="setClinicEmail" placeholder="info@clinic.com" /></div>
-      <div class="settings-row"><label>Insurance</label><input type="text" id="setInsurance" placeholder="Insurance plans accepted" /></div>
-      <div class="settings-row"><label>Parking</label><input type="text" id="setParking" placeholder="Free parking behind building" /></div>
-      <div class="settings-row"><label>Services</label><input type="text" id="setServices" placeholder="Cleanings, fillings, crowns..." /></div>
-      <div class="settings-row"><label>Emergency</label><input type="text" id="setEmergencyPhone" placeholder="+1 (416) 555-0199" /></div>
+      <div class="settings-row"><label>Name</label><input type="text" id="setClinicName" /></div>
+      <div class="settings-row"><label>Timezone</label><input type="text" id="setTimezone" /></div>
+      <div class="settings-row"><label>Address</label><input type="text" id="setAddress" /></div>
+      <div class="settings-row"><label>Hours</label><input type="text" id="setHours" /></div>
+      <div class="settings-row"><label>Phone</label><input type="text" id="setClinicPhone" /></div>
+      <div class="settings-row"><label>Email</label><input type="email" id="setClinicEmail" /></div>
+      <div class="settings-row"><label>Insurance</label><input type="text" id="setInsurance" /></div>
+      <div class="settings-row"><label>Parking</label><input type="text" id="setParking" /></div>
+      <div class="settings-row"><label>Services</label><input type="text" id="setServices" /></div>
+      <div class="settings-row"><label>Emergency</label><input type="text" id="setEmergencyPhone" /></div>
     </div>
 
     <div class="settings-group">
       <div class="settings-group-title">Twilio (SMS)</div>
-      <div class="settings-row"><label>Account SID</label><input type="text" id="setTwilioSid" placeholder="ACxxxxxxxx" /></div>
+      <div class="settings-row"><label>Account SID</label><input type="text" id="setTwilioSid" /></div>
       <div class="settings-row"><label>Auth Token</label><input type="password" id="setTwilioToken" /></div>
-      <div class="settings-row"><label>From Number</label><input type="text" id="setTwilioFrom" placeholder="+14155551234" /></div>
+      <div class="settings-row"><label>From Number</label><input type="text" id="setTwilioFrom" /></div>
     </div>
 
     <div class="settings-group">
       <div class="settings-group-title">Resend (Email)</div>
       <div class="settings-row"><label>API Key</label><input type="password" id="setResendKey" /></div>
-      <div class="settings-row"><label>From Email</label><input type="email" id="setResendFrom" placeholder="notifications@clinic.com" /></div>
+      <div class="settings-row"><label>From Email</label><input type="email" id="setResendFrom" /></div>
     </div>
 
     <div class="settings-group">
       <div class="settings-group-title">VAPI</div>
-      <div class="settings-row"><label>Webhook URL</label></div>
-      <div class="webhook-box" id="webhookUrlBox"></div>
-      <div class="settings-row" style="margin-top:8px;"><label>Secret header</label></div>
-      <div class="webhook-box" id="vapiSecretBox"></div>
-      <div style="margin-top:8px;">
-        <button class="btn btn-sm" onclick="regenerateVapiSecret()">Regenerate Secret</button>
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:4px;">
+        <label style="min-width:auto;">Webhook URL</label>
+        <div class="webhook-box" id="webhookUrlBox"></div>
       </div>
-      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Add function tools in VAPI: <code>book_appointment</code>, <code>check_availability</code>, <code>get_appointments</code>, <code>reschedule_appointment</code>, <code>cancel_appointment</code>, <code>get_clinic_info</code></p>
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:4px;">
+        <label style="min-width:auto;">Secret (x-vapi-secret)</label>
+        <div class="webhook-box" id="vapiSecretBox"></div>
+      </div>
+      <button class="btn btn-sm" onclick="regenerateVapiSecret()">Regenerate Secret</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;">Add these function tools in VAPI: <code>book_appointment</code>, <code>check_availability</code>, <code>get_appointments</code>, <code>reschedule_appointment</code>, <code>cancel_appointment</code>, <code>get_clinic_info</code></p>
     </div>
 
     <div class="settings-group">
       <div class="settings-group-title">Notifications</div>
-      <div class="settings-row"><label>Email to staff</label><input type="email" id="notifyEmail" placeholder="frontdesk@clinic.com" /></div>
-      <div class="settings-row"><label>Email enabled</label><label class="switch"><input type="checkbox" id="emailToggle"><span class="slider"></span></label></div>
-      <div class="settings-row"><label>SMS enabled</label><label class="switch"><input type="checkbox" id="smsToggle"><span class="slider"></span></label></div>
+      <div class="settings-row"><label>Staff email</label><input type="email" id="notifyEmail" /></div>
+      <div class="settings-row"><label>Email alerts</label><label class="switch"><input type="checkbox" id="emailToggle"><span class="slider"></span></label></div>
+      <div class="settings-row"><label>SMS alerts</label><label class="switch"><input type="checkbox" id="smsToggle"><span class="slider"></span></label></div>
     </div>
 
     <div class="settings-footer">
       <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
       <span class="save-msg" id="saveMsg">✓ Saved</span>
-      <button class="btn btn-sm" onclick="seedDemoData()" style="margin-left:auto;">Seed Demo Data</button>
+      <button class="btn btn-sm btn-ghost" onclick="seedDemoData()" style="margin-left:auto;">🌱 Seed Demo Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── RESCHEDULE MODAL ─── -->
+<div class="modal-overlay" id="rescheduleModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>↻ Reschedule Appointment</h2>
+      <button class="close-btn" onclick="closeRescheduleModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <input type="datetime-local" id="rescheduleDateTime" style="grid-column:1/-1;" />
+        <select id="rescheduleService">
+          <option value="">Same service</option>
+          <option>Cleaning</option><option>Checkup</option><option>Filling</option>
+          <option>Root Canal</option><option>Extraction</option><option>Crown</option>
+          <option>Whitening</option><option>Consultation</option><option>Other</option>
+        </select>
+        <input type="number" id="rescheduleDuration" placeholder="Duration (min)" min="15" max="180" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm btn-ghost" onclick="closeRescheduleModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" id="rescheduleConfirmBtn">Confirm</button>
     </div>
   </div>
 </div>
 
 <script>
   const WORKER_URL = "https://clinic-ai-template.ghaziofficial66.workers.dev";
-
   let allAppointments = [];
+  let rescheduleId = null;
 
+  // ── Toast ──
+  function toast(message, type='info'){
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    const icons = { success:'✅', error:'❌', info:'ℹ️' };
+    el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span> ${message}`;
+    container.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('removing');
+      setTimeout(() => el.remove(), 200);
+    }, 3000);
+  }
+
+  // ── API ──
   async function raw(path, method='GET', body=null, withAuth=true){
     const headers = { 'Content-Type': 'application/json' };
     if(withAuth){
@@ -386,6 +490,12 @@ td .duration{font-size:12px;color:var(--muted)}
     return data;
   }
 
+  // ── Navbar scroll effect ──
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 10);
+  });
+
+  // ── Gate ──
   function showGate(){
     document.getElementById('app').style.display = 'none';
     document.getElementById('gate').style.display = 'flex';
@@ -405,6 +515,7 @@ td .duration{font-size:12px;color:var(--muted)}
     const { ok, data } = await raw('/api/setup', 'POST', { password, clinic_name }, false);
     if(!ok){ const el = document.getElementById('setupError'); el.textContent = data.error || 'Setup failed.'; el.style.display='block'; return; }
     localStorage.setItem('sessionToken', data.token);
+    toast('Welcome! Dashboard is ready.', 'success');
     enterApp();
   }
 
@@ -413,18 +524,20 @@ td .duration{font-size:12px;color:var(--muted)}
     const { ok, data } = await raw('/api/login', 'POST', { password }, false);
     if(!ok){ const el = document.getElementById('loginError'); el.textContent = data.error || 'Login failed.'; el.style.display='block'; return; }
     localStorage.setItem('sessionToken', data.token);
+    toast('Signed in successfully.', 'success');
     enterApp();
   }
 
   function enterApp(){
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    loadAll();
+    setTimeout(() => loadAll(), 100);
   }
 
   function showLoading(){ document.getElementById('loadingOverlay').classList.add('show'); }
   function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('show'); }
 
+  // ── Settings ──
   function toggleSettingsPanel(){
     const panel = document.getElementById('settingsPanel');
     const overlay = document.getElementById('settingsOverlay');
@@ -436,6 +549,11 @@ td .duration{font-size:12px;color:var(--muted)}
 
   async function loadSettingsIntoForm(){
     const s = await api('/api/settings');
+    ['ClinicName','Timezone','Address','Hours','ClinicPhone','ClinicEmail','Insurance','Parking','Services','EmergencyPhone'].forEach(f => {
+      const key = 'clinic_' + f.replace(/([A-Z])/g,'_$1').toLowerCase().replace('clinic_','');
+      const el = document.getElementById('set'+f);
+      if(el) el.value = s[key] || '';
+    });
     document.getElementById('setClinicName').value = s.clinic_name || '';
     document.getElementById('setTimezone').value = s.clinic_timezone || '';
     document.getElementById('setAddress').value = s.clinic_address || '';
@@ -460,7 +578,8 @@ td .duration{font-size:12px;color:var(--muted)}
   }
 
   async function saveSettings(){
-    await api('/api/settings', 'POST', {
+    showLoading();
+    const body = {
       clinic_name: document.getElementById('setClinicName').value.trim(),
       clinic_timezone: document.getElementById('setTimezone').value.trim(),
       clinic_address: document.getElementById('setAddress').value.trim(),
@@ -479,40 +598,40 @@ td .duration{font-size:12px;color:var(--muted)}
       notify_email: document.getElementById('notifyEmail').value.trim(),
       email_enabled: document.getElementById('emailToggle').checked,
       sms_enabled: document.getElementById('smsToggle').checked
-    });
-    const msg = document.getElementById('saveMsg');
-    msg.style.display = 'inline';
-    setTimeout(() => msg.style.display = 'none', 2000);
-    document.getElementById('clinicName').textContent = document.getElementById('setClinicName').value || 'Front Desk';
+    };
+    await api('/api/settings', 'POST', body);
+    hideLoading();
+    toast('Settings saved!', 'success');
+    document.getElementById('clinicName').textContent = body.clinic_name || 'Front Desk';
   }
 
   async function regenerateVapiSecret(){
     if(!confirm('This will invalidate the old secret.')) return;
     const res = await api('/api/settings/regenerate-vapi-secret', 'POST');
     document.getElementById('vapiSecretBox').textContent = res.vapi_webhook_secret;
+    toast('VAPI secret regenerated.', 'success');
   }
 
+  // ── Appointments ──
   function toggleForm(){ document.getElementById('apptForm').classList.toggle('open'); }
 
   async function submitNewAppointment(){
-    const patient_name = document.getElementById('fName').value.trim();
+    const name = document.getElementById('fName').value.trim();
     const phone = document.getElementById('fPhone').value.trim();
-    const date_time = document.getElementById('fDateTime').value;
+    const dt = document.getElementById('fDateTime').value;
     const reason = document.getElementById('fReason').value.trim();
     const service = document.getElementById('fService').value;
-    const duration_minutes = parseInt(document.getElementById('fDuration').value) || 30;
-    if(!patient_name || !phone || !date_time){ alert('Name, phone, and date/time are required.'); return; }
+    const dur = parseInt(document.getElementById('fDuration').value) || 30;
+    if(!name || !phone || !dt){ toast('Name, phone, and date/time are required.', 'error'); return; }
     showLoading();
-    const res = await api('/api/appointments', 'POST', { patient_name, phone, date_time, reason, service, duration_minutes });
+    const res = await api('/api/appointments', 'POST', { patient_name:name, phone, date_time:dt, reason, service, duration_minutes:dur });
     hideLoading();
-    if(res.error){ alert(res.error); return; }
-    document.getElementById('fName').value = '';
-    document.getElementById('fPhone').value = '';
-    document.getElementById('fDateTime').value = '';
-    document.getElementById('fReason').value = '';
+    if(res.error){ toast(res.error, 'error'); return; }
+    ['fName','fPhone','fDateTime','fReason','fDuration'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fService').value = '';
     document.getElementById('fDuration').value = '30';
     document.getElementById('apptForm').classList.remove('open');
+    toast('Appointment booked!', 'success');
     loadAll();
   }
 
@@ -520,20 +639,27 @@ td .duration{font-size:12px;color:var(--muted)}
 
   function renderAppointments(list){
     const tbody = document.querySelector('#apptTable tbody');
-    tbody.innerHTML = list.length ? list.map(a => `
+    if(!list.length){
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><div class="empty-icon">📅</div><p>No appointments yet</p><div class="sub">Click "+ Add" to create one</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(a => `
       <tr>
-        <td style="white-space:nowrap;">${new Date(a.date_time).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})}<br><span style="font-size:12px;color:var(--muted)">${new Date(a.date_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></td>
+        <td style="white-space:nowrap;">
+          <span style="font-weight:500">${new Date(a.date_time).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})}</span><br>
+          <span style="font-size:12px;color:var(--muted)">${new Date(a.date_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+        </td>
         <td><div class="name">${a.name}</div><div class="phone">${a.phone}</div></td>
-        <td>${a.service ? `<span class="service-tag">${a.service}</span>` : (a.reason || '—')}</td>
+        <td>${a.service ? `<span class="service-tag">${a.service}</span>` : (a.reason || '<span style="color:var(--muted)">—</span>')}</td>
         <td><span class="duration">${a.duration_minutes || 60} min</span></td>
         <td>${badge(a.status)}</td>
         <td style="white-space:nowrap;">${a.status === 'booked' ? `
-            <button class="btn btn-sm" onclick="rescheduleAppointment(${a.id})" title="Reschedule">↻</button>
-            <button class="btn btn-sm btn-success" onclick="markStatus(${a.id},'completed')" title="Mark completed">✓</button>
-            <button class="btn btn-sm btn-warning" onclick="markStatus(${a.id},'no_show')" title="No show">✕</button>
-            <button class="btn btn-sm btn-danger" onclick="cancelAppointment(${a.id})" title="Cancel">✕ Cancel</button>
+            <button class="btn btn-sm btn-icon" onclick="openRescheduleModal(${a.id})" title="Reschedule">↻</button>
+            <button class="btn btn-sm btn-icon btn-success" onclick="markStatus(${a.id},'completed')" title="Completed">✓</button>
+            <button class="btn btn-sm btn-icon btn-warning" onclick="markStatus(${a.id},'no_show')" title="No show">✕</button>
+            <button class="btn btn-sm btn-danger" onclick="cancelAppointment(${a.id})" style="font-size:11px">Cancel</button>
           ` : '—'}</td>
-      </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No appointments${list.length ? ' match your search.' : ' yet.'}</td></tr>`;
+      </tr>`).join('');
   }
 
   function filterAppointments(){
@@ -551,6 +677,7 @@ td .duration{font-size:12px;color:var(--muted)}
     const a = document.createElement('a');
     a.href = url; a.download = 'appointments_export.csv'; a.click();
     URL.revokeObjectURL(url);
+    toast('CSV downloaded!', 'success');
   }
 
   async function cancelAppointment(id){
@@ -558,15 +685,38 @@ td .duration{font-size:12px;color:var(--muted)}
     showLoading();
     await api(`/api/appointments/${id}`, 'PATCH', { status: 'cancelled' });
     hideLoading();
+    toast('Appointment cancelled. Patient notified.', 'info');
     loadAll();
   }
 
-  async function rescheduleAppointment(id){
-    const newTime = prompt('New date/time (e.g. 2026-07-30T14:00):');
-    if(!newTime) return;
+  // ── Reschedule Modal ──
+  function openRescheduleModal(id){
+    rescheduleId = id;
+    document.getElementById('rescheduleDateTime').value = '';
+    document.getElementById('rescheduleService').value = '';
+    document.getElementById('rescheduleDuration').value = '';
+    document.getElementById('rescheduleModal').classList.add('open');
+    document.getElementById('rescheduleConfirmBtn').onclick = () => confirmReschedule(id);
+  }
+
+  function closeRescheduleModal(){
+    document.getElementById('rescheduleModal').classList.remove('open');
+    rescheduleId = null;
+  }
+
+  async function confirmReschedule(id){
+    const newTime = document.getElementById('rescheduleDateTime').value;
+    if(!newTime){ toast('Please select a new date and time.', 'error'); return; }
+    const service = document.getElementById('rescheduleService').value;
+    const dur = parseInt(document.getElementById('rescheduleDuration').value);
+    const body = { date_time: newTime };
+    if(service) body.service = service;
+    if(dur) body.duration_minutes = dur;
     showLoading();
-    await api(`/api/appointments/${id}`, 'PUT', { date_time: newTime });
+    await api(`/api/appointments/${id}`, 'PUT', body);
     hideLoading();
+    closeRescheduleModal();
+    toast('Appointment rescheduled!', 'success');
     loadAll();
   }
 
@@ -576,6 +726,7 @@ td .duration{font-size:12px;color:var(--muted)}
     showLoading();
     await api(`/api/appointments/${id}`, 'PATCH', { status });
     hideLoading();
+    toast(`Marked as ${status.replace('_',' ')}.`, 'success');
     loadAll();
   }
 
@@ -610,14 +761,21 @@ td .duration{font-size:12px;color:var(--muted)}
       const calls = await api('/api/calls');
       const callsBody = document.querySelector('#callsTable tbody');
       const callList = calls.calls || [];
-      callsBody.innerHTML = callList.length ? callList.map(c => `
-        <tr>
-          <td style="white-space:nowrap;">${new Date(c.created_at).toLocaleDateString([],{month:'short',day:'numeric'})}<br><span style="font-size:12px;color:var(--muted)">${new Date(c.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></td>
-          <td>${c.caller_phone}</td>
-          <td>${badge(c.call_status)}</td>
-          <td>${c.duration_seconds ? c.duration_seconds + 's' : '—'}</td>
-          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${c.transcript_summary || '—'}</td>
-        </tr>`).join('') : `<tr><td colspan="5" class="empty-state">No calls logged yet.</td></tr>`;
+      if(!callList.length){
+        callsBody.innerHTML = `<tr><td colspan="5" class="empty-state"><div class="empty-icon">📞</div><p>No calls logged yet</p><div class="sub">Calls will appear here after VAPI integration</div></td></tr>`;
+      } else {
+        callsBody.innerHTML = callList.map(c => `
+          <tr>
+            <td style="white-space:nowrap;">
+              <span style="font-weight:500">${new Date(c.created_at).toLocaleDateString([],{month:'short',day:'numeric'})}</span><br>
+              <span style="font-size:12px;color:var(--muted)">${new Date(c.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+            </td>
+            <td>${c.caller_phone}</td>
+            <td>${badge(c.call_status)}</td>
+            <td>${c.duration_seconds ? c.duration_seconds + 's' : '—'}</td>
+            <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px">${c.transcript_summary || '—'}</td>
+          </tr>`).join('');
+      }
       hideLoading();
     } catch(e){ console.error(e); hideLoading(); }
   }
@@ -627,8 +785,8 @@ td .duration{font-size:12px;color:var(--muted)}
     showLoading();
     const { ok, data } = await raw('/api/seed-demo', 'POST', null, true);
     hideLoading();
-    if(ok){ alert('Demo data seeded!'); loadAll(); }
-    else { alert(data.error || 'Failed to seed data'); }
+    if(ok){ toast('Demo data seeded!', 'success'); loadAll(); }
+    else { toast(data.error || 'Failed to seed data', 'error'); }
   }
 
   // ── Init ──
@@ -637,6 +795,11 @@ td .duration{font-size:12px;color:var(--muted)}
   } else {
     showGate();
   }
+
+  // Close reschedule modal on overlay click
+  document.getElementById('rescheduleModal').addEventListener('click', function(e){
+    if(e.target === this) closeRescheduleModal();
+  });
 </script>
 </body>
 </html>
