@@ -5,211 +5,364 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Front Desk — Clinic Dashboard</title>
 <style>
-  :root{
-    --ink:#132A29; --paper:#F6F3EC; --teal:#0F4C43; --teal-deep:#0A332C;
-    --gold:#D6A536; --line:#DAD4C4; --danger:#B4432E; --ok:#3E7A56;
-  }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Iowan Old Style','Georgia',serif;}
-  .topbar{background:var(--teal-deep);color:var(--paper);padding:20px 32px;display:flex;align-items:baseline;justify-content:space-between;border-bottom:3px solid var(--gold);}
-  .topbar h1{font-size:20px;letter-spacing:0.04em;margin:0;font-weight:600;}
-  .topbar .tag{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);cursor:pointer;}
-  .wrap{max-width:1000px;margin:0 auto;padding:28px 24px 60px;}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px;}
-  .stat{background:#fff;border:1px solid var(--line);border-radius:2px;padding:16px 18px;}
-  .stat .num{font-size:32px;font-weight:700;color:var(--teal);line-height:1;}
-  .stat .label{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6B6255;margin-top:6px;}
-  .stat.warn .num{color:var(--danger);}
-  section{margin-bottom:40px;}
-  h2{font-size:15px;text-transform:uppercase;letter-spacing:0.1em;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--teal-deep);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:0;}
-  table{width:100%;border-collapse:collapse;font-size:14.5px;}
-  th{text-align:left;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#6B6255;padding:10px 8px;border-bottom:1px solid var(--line);}
-  td{padding:10px 8px;border-bottom:1px solid var(--line);}
-  tr:hover td{background:#FBF9F4;}
-  .badge{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;padding:3px 9px;border-radius:20px;display:inline-block;}
-  .badge.booked{background:#E4EFE8;color:var(--ok);}
-  .badge.missed{background:#F6E4DF;color:var(--danger);}
-  .badge.answered{background:#E4EFE8;color:var(--ok);}
-  .badge.cancelled, .badge.no_show{background:#F0E9E2;color:#8A7B60;}
-  .empty{color:#8A7B60;font-style:italic;padding:20px 8px;}
-  #gate{max-width:400px;margin:100px auto;text-align:center;}
-  #gate input, .form-grid input, .form-grid select, .search-row input, .settings-row input{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:2px;margin:8px 0;font-family:'Helvetica Neue',Arial,sans-serif;}
-  .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:spin .6s linear infinite;margin-left:8px;vertical-align:middle;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(246,243,236,0.7);display:none;align-items:center;justify-content:center;z-index:999;}
-  .loading-overlay.show{display:flex;}
-  .loading-overlay .spinner{width:32px;height:32px;border-width:3px;}
-  #gate button, .refresh{background:var(--teal);color:#fff;border:none;padding:10px 20px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;letter-spacing:0.04em;border-radius:2px;cursor:pointer;}
-  #gate button:hover, .refresh:hover{background:var(--teal-deep);}
-  .refresh-row{display:flex;justify-content:flex-end;margin:16px 0;gap:10px;}
-  .settings-box{background:#fff;border:1px solid var(--line);border-radius:2px;padding:20px 22px;margin-top:14px;}
-  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;gap:16px;}
-  .settings-row:last-child{border-bottom:none;}
-  .settings-row input{margin:0;width:260px;}
-  .settings-group-title{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold);margin:18px 0 4px;}
-  .switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;}
-  .switch input{opacity:0;width:0;height:0;}
-  .slider{position:absolute;cursor:pointer;inset:0;background:#D9D2C2;transition:0.2s;border-radius:24px;}
-  .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:white;transition:0.2s;border-radius:50%;}
-  input:checked + .slider{background:var(--ok);}
-  input:checked + .slider:before{transform:translateX(18px);}
-  .action-btn{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;padding:4px 10px;margin-right:6px;border-radius:2px;border:1px solid var(--line);background:#fff;cursor:pointer;}
-  .action-btn:hover{background:#F0EBE0;}
-  .action-btn.danger{color:var(--danger);border-color:var(--danger);}
-  .save-msg{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:var(--ok);margin-left:12px;}
-  .form-box{background:#fff;border:1px solid var(--line);border-radius:2px;padding:18px 20px;margin-bottom:16px;display:none;}
-  .form-box.open{display:block;}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .search-row{display:flex;gap:10px;margin-bottom:12px;}
-  .hint{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8A7B60;margin-top:4px;}
-  .webhook-box{background:#FBF9F4;border:1px dashed var(--line);padding:10px 12px;font-family:monospace;font-size:12px;word-break:break-all;margin:6px 0;}
-  #settingsPanel{display:none;}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#0D7C66; --primary-dark:#065A48; --primary-light:#E8F5F2;
+  --accent:#2D9CDB; --bg:#F5F7FA; --card:#fff; --text:#1A202C;
+  --muted:#718096; --border:#E2E8F0; --shadow:0 1px 3px rgba(0,0,0,.08);
+  --success:#38A169; --warning:#D69E2E; --danger:#E53E3E;
+  --radius:10px; --radius-sm:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+
+/* ── Navbar ── */
+.navbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.navbar .logo{display:flex;align-items:center;gap:10px}
+.navbar .logo svg{width:28px;height:28px}
+.navbar .logo h1{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.navbar .logo h1 span{color:var(--primary)}
+.navbar .nav-actions{display:flex;align-items:center;gap:8px}
+.navbar .nav-actions button{background:none;border:1px solid var(--border);padding:7px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:.15s}
+.navbar .nav-actions button:hover{background:var(--bg);color:var(--text)}
+.navbar .nav-actions button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.navbar .nav-actions button.primary:hover{background:var(--primary-dark)}
+
+/* ── Main layout ── */
+.main{max-width:1200px;margin:0 auto;padding:24px 32px 60px}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;gap:16px;transition:box-shadow .15s}
+.stat-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.stat-card .icon{width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.stat-card .icon.teal{background:var(--primary-light);color:var(--primary)}
+.stat-card .icon.red{background:#FDE8E8;color:var(--danger)}
+.stat-card .icon.green{background:#E6F7EC;color:var(--success)}
+.stat-card .info .num{font-size:26px;font-weight:700;line-height:1.2}
+.stat-card .info .label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.03em}
+
+/* ── Section cards ── */
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:24px;overflow:hidden}
+.section-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.section-header h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.section-header .actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:.12s;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-danger{color:var(--danger);border-color:var(--danger)}
+.btn-danger:hover{background:#FDE8E8}
+.btn-success{color:var(--success);border-color:var(--success)}
+.btn-success:hover{background:#E6F7EC}
+.btn-warning{color:var(--warning);border-color:var(--warning)}
+.btn-warning:hover{background:#FEF5E7}
+
+/* ── Table ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFBFC}
+td .name{font-weight:600;color:var(--text)}
+td .phone{font-size:12px;color:var(--muted)}
+td .service-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;background:var(--primary-light);color:var(--primary)}
+td .duration{font-size:12px;color:var(--muted)}
+.empty-state{padding:40px 16px;text-align:center;color:var(--muted);font-size:14px}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%}
+.badge.booked{background:#E6F7EC;color:var(--success)}
+.badge.booked::before{background:var(--success)}
+.badge.cancelled{background:#FEF5E7;color:var(--warning)}
+.badge.cancelled::before{background:var(--warning)}
+.badge.completed{background:#EBF4FF;color:var(--accent)}
+.badge.completed::before{background:var(--accent)}
+.badge.no_show{background:#FDE8E8;color:var(--danger)}
+.badge.no_show::before{background:var(--danger)}
+.badge.answered{background:#E6F7EC;color:var(--success)}
+.badge.answered::before{background:var(--success)}
+.badge.missed{background:#FDE8E8;color:var(--danger)}
+.badge.missed::before{background:var(--danger)}
+
+/* ── Form / Filter bar ── */
+.filter-bar{display:flex;gap:10px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.filter-bar input,.filter-bar select{padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--card);color:var(--text);outline:none;transition:.12s}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
+.filter-bar input[type=date]{width:140px}
+.filter-bar .sep{color:var(--border);font-size:18px;font-weight:300}
+.filter-bar .search-wrap{position:relative;flex:1;min-width:180px}
+.filter-bar .search-wrap input{padding-left:32px;width:100%}
+.filter-bar .search-wrap .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+
+/* ── Collapsible form ── */
+.form-collapse{display:none;padding:20px;border-bottom:1px solid var(--border)}
+.form-collapse.open{display:block}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.form-grid input,.form-grid select{padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;background:var(--card)}
+.form-grid input:focus,.form-grid select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
+.form-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+
+/* ── Settings sidebar ── */
+.settings-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:200;display:none;animation:fadeIn .2s}
+.settings-overlay.open{display:block}
+.settings-panel{position:fixed;top:0;right:0;width:540px;max-width:100vw;height:100%;background:var(--card);z-index:201;transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.1)}
+.settings-panel.open{transform:translateX(0)}
+.settings-panel .panel-header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;z-index:2}
+.settings-panel .panel-header h2{font-size:15px;font-weight:600}
+.settings-panel .panel-header .close-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:4px}
+.settings-panel .panel-header .close-btn:hover{color:var(--text)}
+.settings-panel .panel-body{padding:8px 24px 40px}
+.settings-group{margin-bottom:20px}
+.settings-group-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.settings-row{display:flex;align-items:center;padding:10px 0;gap:12px}
+.settings-row label{font-size:13px;color:var(--text);min-width:130px;flex-shrink:0}
+.settings-row input,.settings-row select{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none}
+.settings-row input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
+.settings-row .switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0}
+.settings-row .switch input{opacity:0;width:0;height:0}
+.settings-row .slider{position:absolute;cursor:pointer;inset:0;background:#CBD5E0;transition:.2s;border-radius:22px}
+.settings-row .slider::before{position:absolute;content:'';height:16px;width:16px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
+.settings-row input:checked+.slider{background:var(--primary)}
+.settings-row input:checked+.slider::before{transform:translateX(16px)}
+.webhook-box{background:#F7FAFC;border:1px dashed var(--border);padding:10px 12px;font-family:ui-monospace,monospace;font-size:12px;word-break:break-all;border-radius:var(--radius-sm);margin:4px 0}
+.settings-footer{padding:16px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:8px}
+.save-msg{font-size:13px;color:var(--success);font-weight:500;display:none}
+
+/* ── Gate (login/setup) ── */
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary-light) 0%,var(--bg) 100%);padding:24px}
+.gate-card{background:var(--card);border-radius:var(--radius);padding:40px;width:400px;max-width:100%;box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}
+.gate-card .logo{width:56px;height:56px;background:var(--primary);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.gate-card h1{font-size:20px;font-weight:700;margin-bottom:4px}
+.gate-card p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.gate-card .input-group{text-align:left;margin-bottom:14px}
+.gate-card .input-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.gate-card .input-group input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none}
+.gate-card .input-group input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
+.gate-card .btn-primary{width:100%;justify-content:center;padding:11px;font-size:14px;margin-top:4px}
+.gate-card .error{color:var(--danger);font-size:13px;margin-top:10px;display:none}
+
+/* ── Loading spinner ── */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .5s linear infinite}
+.spinner-lg{width:36px;height:36px;border-width:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.7);display:none;align-items:center;justify-content:center;z-index:999}
+.loading-overlay.show{display:flex}
+.loading-overlay .spinner{width:36px;height:36px;border-width:3px}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .main{padding:16px}
+  .navbar{padding:0 16px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stats .stat-card{padding:14px}
+  .stats .stat-card .icon{width:36px;height:36px;font-size:16px}
+  .stats .stat-card .info .num{font-size:20px}
+  .filter-bar input[type=date]{width:120px}
+  .settings-panel{width:100%}
+  .gate-card{padding:24px;margin:16px}
+}
 </style>
 </head>
 <body>
 
-<div id="gate">
-  <h1 style="color:var(--teal-deep)">Front Desk Dashboard</h1>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner spinner-lg"></div></div>
 
-  <div id="setupForm" style="display:none;">
-    <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6B6255;">First time here — create your admin password to finish setup.</p>
-    <input type="text" id="setupClinicName" placeholder="Clinic name" />
-    <input type="password" id="setupPassword" placeholder="Create a password (min 8 characters)" />
-    <button onclick="doSetup()">Create & Continue</button>
-    <p id="setupError" style="color:var(--danger);font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;"></p>
-  </div>
+<!-- ─── GATE (Login / Setup) ─── -->
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <div class="logo">
+      <svg fill="none" viewBox="0 0 28 28" width="28" height="28"><path d="M14 2C7.373 2 2 7.373 2 14s5.373 12 12 12 12-5.373 12-12S20.627 2 14 2z" fill="#fff"/><path d="M14 6a2 2 0 00-2 2v8a2 2 0 004 0V8a2 2 0 00-2-2zm-5 4a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2zm10 0a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2z" fill="var(--primary)"/></svg>
+    </div>
+    <h1>Front Desk</h1>
+    <p id="gateDesc">Sign in to manage your clinic.</p>
 
-  <div id="loginForm" style="display:none;">
-    <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6B6255;">Enter your admin password to continue</p>
-    <input type="password" id="loginPassword" placeholder="Admin password" />
-    <button onclick="doLogin()">Log In</button>
-    <p id="loginError" style="color:var(--danger);font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;"></p>
+    <div id="setupForm" style="display:none;">
+      <div class="input-group"><label>Clinic Name</label><input type="text" id="setupClinicName" placeholder="e.g. Aspen Dental" /></div>
+      <div class="input-group"><label>Create Password</label><input type="password" id="setupPassword" placeholder="Min 8 characters" /></div>
+      <button class="btn btn-primary" onclick="doSetup()">Create Account</button>
+      <p class="error" id="setupError"></p>
+    </div>
+
+    <div id="loginForm" style="display:none;">
+      <div class="input-group"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()" /></div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+      <p class="error" id="loginError"></p>
+    </div>
   </div>
 </div>
 
-  <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+<!-- ─── DASHBOARD ─── -->
+<div id="app" style="display:none;">
 
-  <div id="app" style="display:none;">
-    <div class="topbar">
-      <h1 id="clinicName">Front Desk</h1>
-      <span class="tag" onclick="toggleSettingsPanel()">Backend Settings</span>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">
+      <svg fill="none" viewBox="0 0 28 28" width="28" height="28"><circle cx="14" cy="14" r="12" fill="var(--primary)"/><path d="M14 6a2 2 0 00-2 2v8a2 2 0 004 0V8a2 2 0 00-2-2zm-5 4a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2zm10 0a2 2 0 00-2 2v4a2 2 0 004 0v-4a2 2 0 00-2-2z" fill="#fff"/></svg>
+      <h1><span id="clinicName">Front Desk</span></h1>
     </div>
-    <div class="wrap">
-
-    <div id="settingsPanel">
-      <section>
-        <h2>Backend Settings</h2>
-        <div class="settings-box">
-
-          <div class="settings-group-title">Clinic</div>
-          <div class="settings-row"><span>Clinic name</span><input type="text" id="setClinicName" /></div>
-          <div class="settings-row"><span>Timezone</span><input type="text" id="setTimezone" placeholder="America/Toronto" /></div>
-
-          <div class="settings-group-title">Clinic Info</div>
-          <div class="settings-row"><span>Address</span><input type="text" id="setAddress" placeholder="123 Main St, Toronto, ON" /></div>
-          <div class="settings-row"><span>Hours</span><input type="text" id="setHours" placeholder="Mon–Fri 9AM–5PM" /></div>
-          <div class="settings-row"><span>Clinic phone</span><input type="text" id="setClinicPhone" placeholder="+1 (416) 555-0147" /></div>
-          <div class="settings-row"><span>Clinic email</span><input type="email" id="setClinicEmail" placeholder="info@clinic.com" /></div>
-          <div class="settings-row"><span>Insurance info</span><input type="text" id="setInsurance" placeholder="Insurance plans accepted" /></div>
-          <div class="settings-row"><span>Parking info</span><input type="text" id="setParking" placeholder="Free parking behind building" /></div>
-          <div class="settings-row"><span>Services offered</span><input type="text" id="setServices" placeholder="Cleanings, fillings, crowns..." /></div>
-          <div class="settings-row"><span>Emergency phone</span><input type="text" id="setEmergencyPhone" placeholder="+1 (416) 555-0199" /></div>
-
-          <div class="settings-group-title">Twilio (SMS)</div>
-          <div class="settings-row"><span>Account SID</span><input type="text" id="setTwilioSid" placeholder="ACxxxxxxxx" /></div>
-          <div class="settings-row"><span>Auth Token</span><input type="password" id="setTwilioToken" placeholder="••••••••" /></div>
-          <div class="settings-row"><span>From Number</span><input type="text" id="setTwilioFrom" placeholder="+14155551234" /></div>
-
-          <div class="settings-group-title">Resend (Email)</div>
-          <div class="settings-row"><span>API Key</span><input type="password" id="setResendKey" placeholder="re_xxxxxxxx" /></div>
-          <div class="settings-row"><span>From Email</span><input type="text" id="setResendFrom" placeholder="notifications@yourdomain.com" /></div>
-
-          <div class="settings-group-title">VAPI</div>
-          <div class="settings-row"><span>Webhook URL to paste into VAPI</span></div>
-          <div class="webhook-box" id="webhookUrlBox"></div>
-          <div class="settings-row"><span>Custom header VAPI must send: <code>x-vapi-secret</code></span></div>
-          <div class="webhook-box" id="vapiSecretBox"></div>
-          <div class="refresh-row" style="margin-top:0;">
-            <button class="action-btn" onclick="regenerateVapiSecret()">Regenerate Secret</button>
-          </div>
-          <p class="hint">Add a function tool named <code>book_appointment</code> in your VAPI assistant with parameters: patient_name, phone, date_time, reason.</p>
-
-          <div class="settings-group-title">Notifications</div>
-          <div class="settings-row"><span>Email staff on booking/cancel/reschedule</span><label class="switch"><input type="checkbox" id="emailToggle"><span class="slider"></span></label></div>
-          <div class="settings-row"><span>SMS patient on booking/cancel/reschedule</span><label class="switch"><input type="checkbox" id="smsToggle"><span class="slider"></span></label></div>
-          <div class="settings-row"><span>Staff notification email</span><input type="email" id="notifyEmail" placeholder="frontdesk@clinic.com" /></div>
-
-          <div class="refresh-row">
-            <span class="save-msg" id="saveMsg" style="display:none;">Saved.</span>
-            <button class="refresh" onclick="saveSettings()">Save Settings</button>
-            <button class="action-btn" onclick="seedDemoData()" style="font-size:11px;">Seed Demo Data</button>
-          </div>
-        </div>
-      </section>
+    <div class="nav-actions">
+      <button onclick="toggleSettingsPanel()">⚙️ Settings</button>
     </div>
+  </nav>
 
-    <div id="mainPanel">
-      <div class="stats" id="stats"></div>
+  <div class="main">
 
-      <section>
-        <h2>Upcoming Appointments</h2>
-        <div class="refresh-row" style="margin-top:14px;">
-          <button class="refresh" onclick="toggleForm()">+ Add Appointment</button>
-          <button class="refresh" onclick="exportCSV()">Export CSV</button>
-          <button class="refresh" onclick="loadAll()">Refresh</button>
+    <!-- Stats -->
+    <div class="stats" id="stats"></div>
+
+    <!-- Appointments -->
+    <div class="section-card">
+      <div class="section-header">
+        <h2>📅 Appointments</h2>
+        <div class="actions">
+          <button class="btn btn-sm" onclick="toggleForm()">+ Add Appointment</button>
+          <button class="btn btn-sm" onclick="exportCSV()">📥 Export</button>
+          <button class="btn btn-sm btn-primary" onclick="loadAll()">🔄 Refresh</button>
         </div>
+      </div>
 
-        <div class="form-box" id="apptForm">
-          <div class="form-grid">
-            <input type="text" id="fName" placeholder="Patient name" />
-            <input type="tel" id="fPhone" placeholder="Phone (+1...)" />
-            <input type="datetime-local" id="fDateTime" />
-            <select id="fService">
-              <option value="">Service type...</option>
-              <option>Cleaning</option>
-              <option>Checkup</option>
-              <option>Filling</option>
-              <option>Root Canal</option>
-              <option>Extraction</option>
-              <option>Crown</option>
-              <option>Whitening</option>
-              <option>Consultation</option>
-              <option>Other</option>
-            </select>
-            <input type="text" id="fReason" placeholder="Reason / notes (optional)" />
-            <input type="number" id="fDuration" placeholder="Duration (min)" value="30" min="15" max="180" />
-          </div>
-          <div class="refresh-row"><button class="refresh" onclick="submitNewAppointment()">Save Appointment</button></div>
+      <!-- New Appointment Form -->
+      <div class="form-collapse" id="apptForm">
+        <div class="form-grid">
+          <input type="text" id="fName" placeholder="Patient name" />
+          <input type="tel" id="fPhone" placeholder="Phone" />
+          <input type="datetime-local" id="fDateTime" />
+          <select id="fService">
+            <option value="">Service type...</option>
+            <option>Cleaning</option><option>Checkup</option><option>Filling</option>
+            <option>Root Canal</option><option>Extraction</option><option>Crown</option>
+            <option>Whitening</option><option>Consultation</option><option>Other</option>
+          </select>
+          <input type="text" id="fReason" placeholder="Notes (optional)" />
+          <input type="number" id="fDuration" placeholder="Duration (min)" value="30" min="15" max="180" />
         </div>
-
-        <div class="search-row">
-          <input type="date" id="filterFrom" onchange="loadAppointments()" style="width:auto;" />
-          <span style="color:var(--line);">–</span>
-          <input type="date" id="filterTo" onchange="loadAppointments()" style="width:auto;" />
-          <input type="text" id="searchBox" placeholder="Search by name or phone..." oninput="filterAppointments()" style="flex:1;" />
+        <div class="form-footer">
+          <button class="btn btn-sm" onclick="toggleForm()">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="submitNewAppointment()">Save</button>
         </div>
+      </div>
 
+      <!-- Filter + Search -->
+      <div class="filter-bar">
+        <input type="date" id="filterFrom" onchange="loadAppointments()" title="From date" />
+        <span class="sep">–</span>
+        <input type="date" id="filterTo" onchange="loadAppointments()" title="To date" />
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchBox" placeholder="Search name or phone..." oninput="filterAppointments()" />
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
         <table id="apptTable">
-          <thead><tr><th>Date/Time</th><th>Patient</th><th>Phone</th><th>Service</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Date / Time</th>
+              <th>Patient</th>
+              <th>Service</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
-      </section>
+      </div>
+    </div>
 
-      <section>
-        <h2>Recent Calls</h2>
+    <!-- Recent Calls -->
+    <div class="section-card">
+      <div class="section-header">
+        <h2>📞 Recent Calls</h2>
+      </div>
+      <div class="table-wrap">
         <table id="callsTable">
-          <thead><tr><th>Time</th><th>Caller</th><th>Status</th><th>Duration</th><th>Summary</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Caller</th>
+              <th>Status</th>
+              <th>Duration</th>
+              <th>Summary</th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
-      </section>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── SETTINGS SIDEBAR ─── -->
+<div class="settings-overlay" id="settingsOverlay" onclick="toggleSettingsPanel()"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="panel-header">
+    <h2>⚙️ Settings</h2>
+    <button class="close-btn" onclick="toggleSettingsPanel()">✕</button>
+  </div>
+  <div class="panel-body">
+
+    <div class="settings-group">
+      <div class="settings-group-title">Clinic Info</div>
+      <div class="settings-row"><label>Clinic name</label><input type="text" id="setClinicName" /></div>
+      <div class="settings-row"><label>Timezone</label><input type="text" id="setTimezone" placeholder="America/Toronto" /></div>
+      <div class="settings-row"><label>Address</label><input type="text" id="setAddress" placeholder="123 Main St, Toronto" /></div>
+      <div class="settings-row"><label>Hours</label><input type="text" id="setHours" placeholder="Mon–Fri 9AM–5PM" /></div>
+      <div class="settings-row"><label>Phone</label><input type="text" id="setClinicPhone" placeholder="+1 (416) 555-0147" /></div>
+      <div class="settings-row"><label>Email</label><input type="email" id="setClinicEmail" placeholder="info@clinic.com" /></div>
+      <div class="settings-row"><label>Insurance</label><input type="text" id="setInsurance" placeholder="Insurance plans accepted" /></div>
+      <div class="settings-row"><label>Parking</label><input type="text" id="setParking" placeholder="Free parking behind building" /></div>
+      <div class="settings-row"><label>Services</label><input type="text" id="setServices" placeholder="Cleanings, fillings, crowns..." /></div>
+      <div class="settings-row"><label>Emergency</label><input type="text" id="setEmergencyPhone" placeholder="+1 (416) 555-0199" /></div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">Twilio (SMS)</div>
+      <div class="settings-row"><label>Account SID</label><input type="text" id="setTwilioSid" placeholder="ACxxxxxxxx" /></div>
+      <div class="settings-row"><label>Auth Token</label><input type="password" id="setTwilioToken" /></div>
+      <div class="settings-row"><label>From Number</label><input type="text" id="setTwilioFrom" placeholder="+14155551234" /></div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">Resend (Email)</div>
+      <div class="settings-row"><label>API Key</label><input type="password" id="setResendKey" /></div>
+      <div class="settings-row"><label>From Email</label><input type="email" id="setResendFrom" placeholder="notifications@clinic.com" /></div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">VAPI</div>
+      <div class="settings-row"><label>Webhook URL</label></div>
+      <div class="webhook-box" id="webhookUrlBox"></div>
+      <div class="settings-row" style="margin-top:8px;"><label>Secret header</label></div>
+      <div class="webhook-box" id="vapiSecretBox"></div>
+      <div style="margin-top:8px;">
+        <button class="btn btn-sm" onclick="regenerateVapiSecret()">Regenerate Secret</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Add function tools in VAPI: <code>book_appointment</code>, <code>check_availability</code>, <code>get_appointments</code>, <code>reschedule_appointment</code>, <code>cancel_appointment</code>, <code>get_clinic_info</code></p>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">Notifications</div>
+      <div class="settings-row"><label>Email to staff</label><input type="email" id="notifyEmail" placeholder="frontdesk@clinic.com" /></div>
+      <div class="settings-row"><label>Email enabled</label><label class="switch"><input type="checkbox" id="emailToggle"><span class="slider"></span></label></div>
+      <div class="settings-row"><label>SMS enabled</label><label class="switch"><input type="checkbox" id="smsToggle"><span class="slider"></span></label></div>
+    </div>
+
+    <div class="settings-footer">
+      <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+      <span class="save-msg" id="saveMsg">✓ Saved</span>
+      <button class="btn btn-sm" onclick="seedDemoData()" style="margin-left:auto;">Seed Demo Data</button>
     </div>
   </div>
 </div>
 
 <script>
-  // ── EDIT THIS ONE LINE PER CLIENT (the only manual edit left) ──
   const WORKER_URL = "https://clinic-ai-template.ghaziofficial66.workers.dev";
-  // ─────────────────────────────────────────────────────────────
 
   let allAppointments = [];
 
@@ -235,26 +388,22 @@
 
   function showGate(){
     document.getElementById('app').style.display = 'none';
-    document.getElementById('gate').style.display = 'block';
+    document.getElementById('gate').style.display = 'flex';
     checkSetupStatus();
   }
 
   async function checkSetupStatus(){
     const { data } = await raw('/api/setup-status', 'GET', null, false);
-    if(data.setup_complete){
-      document.getElementById('setupForm').style.display = 'none';
-      document.getElementById('loginForm').style.display = 'block';
-    } else {
-      document.getElementById('setupForm').style.display = 'block';
-      document.getElementById('loginForm').style.display = 'none';
-    }
+    document.getElementById('setupForm').style.display = data.setup_complete ? 'none' : 'block';
+    document.getElementById('loginForm').style.display = data.setup_complete ? 'block' : 'none';
+    document.getElementById('gateDesc').textContent = data.setup_complete ? 'Sign in to manage your clinic.' : 'Welcome! Set up your clinic to get started.';
   }
 
   async function doSetup(){
     const password = document.getElementById('setupPassword').value;
     const clinic_name = document.getElementById('setupClinicName').value.trim();
     const { ok, data } = await raw('/api/setup', 'POST', { password, clinic_name }, false);
-    if(!ok){ document.getElementById('setupError').textContent = data.error || 'Setup failed.'; return; }
+    if(!ok){ const el = document.getElementById('setupError'); el.textContent = data.error || 'Setup failed.'; el.style.display='block'; return; }
     localStorage.setItem('sessionToken', data.token);
     enterApp();
   }
@@ -262,7 +411,7 @@
   async function doLogin(){
     const password = document.getElementById('loginPassword').value;
     const { ok, data } = await raw('/api/login', 'POST', { password }, false);
-    if(!ok){ document.getElementById('loginError').textContent = data.error || 'Login failed.'; return; }
+    if(!ok){ const el = document.getElementById('loginError'); el.textContent = data.error || 'Login failed.'; el.style.display='block'; return; }
     localStorage.setItem('sessionToken', data.token);
     enterApp();
   }
@@ -273,12 +422,15 @@
     loadAll();
   }
 
+  function showLoading(){ document.getElementById('loadingOverlay').classList.add('show'); }
+  function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('show'); }
+
   function toggleSettingsPanel(){
     const panel = document.getElementById('settingsPanel');
-    const main = document.getElementById('mainPanel');
-    const opening = panel.style.display !== 'block';
-    panel.style.display = opening ? 'block' : 'none';
-    main.style.display = opening ? 'none' : 'block';
+    const overlay = document.getElementById('settingsOverlay');
+    const opening = !panel.classList.contains('open');
+    panel.classList.toggle('open', opening);
+    overlay.classList.toggle('open', opening);
     if(opening) loadSettingsIntoForm();
   }
 
@@ -304,7 +456,7 @@
     document.getElementById('notifyEmail').value = s.notify_email || '';
     document.getElementById('webhookUrlBox').textContent = WORKER_URL + '/webhook/vapi';
     document.getElementById('vapiSecretBox').textContent = s.vapi_webhook_secret || '(not set)';
-    document.getElementById('clinicName').textContent = (s.clinic_name || 'Front Desk') + ' · Front Desk';
+    document.getElementById('clinicName').textContent = s.clinic_name || 'Front Desk';
   }
 
   async function saveSettings(){
@@ -331,41 +483,16 @@
     const msg = document.getElementById('saveMsg');
     msg.style.display = 'inline';
     setTimeout(() => msg.style.display = 'none', 2000);
-    document.getElementById('clinicName').textContent = document.getElementById('setClinicName').value + ' · Front Desk';
+    document.getElementById('clinicName').textContent = document.getElementById('setClinicName').value || 'Front Desk';
   }
 
   async function regenerateVapiSecret(){
-    if(!confirm('This will invalidate the old secret — update it in VAPI right after.')) return;
+    if(!confirm('This will invalidate the old secret.')) return;
     const res = await api('/api/settings/regenerate-vapi-secret', 'POST');
     document.getElementById('vapiSecretBox').textContent = res.vapi_webhook_secret;
   }
 
   function toggleForm(){ document.getElementById('apptForm').classList.toggle('open'); }
-
-  function showLoading(){ document.getElementById('loadingOverlay').classList.add('show'); }
-  function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('show'); }
-
-  async function markStatus(id, status){
-    const labels = { completed: 'mark this as Completed', no_show: 'mark as No Show' };
-    if(!confirm(`Are you sure you want to ${labels[status] || 'update'}?`)) return;
-    showLoading();
-    await api(`/api/appointments/${id}`, 'PATCH', { status });
-    hideLoading();
-    loadAll();
-  }
-
-  async function loadAppointments(){
-    const from = document.getElementById('filterFrom').value;
-    const to = document.getElementById('filterTo').value;
-    let path = '/api/appointments';
-    const params = [];
-    if(from) params.push('from='+from);
-    if(to) params.push('to='+to);
-    if(params.length) path += '?' + params.join('&');
-    const appts = await api(path);
-    allAppointments = appts.appointments || [];
-    renderAppointments(allAppointments);
-  }
 
   async function submitNewAppointment(){
     const patient_name = document.getElementById('fName').value.trim();
@@ -389,30 +516,31 @@
     loadAll();
   }
 
-  function badge(status){ return `<span class="badge ${status}">${status.replace('_',' ')}</span>`; }
+  function badge(status){ return `<span class="badge ${status.replace(' ','_')}">${status.replace('_',' ')}</span>`; }
 
   function renderAppointments(list){
-    const apptBody = document.querySelector('#apptTable tbody');
-    apptBody.innerHTML = list.length ? list.map(a => `
+    const tbody = document.querySelector('#apptTable tbody');
+    tbody.innerHTML = list.length ? list.map(a => `
       <tr>
-        <td>${new Date(a.date_time).toLocaleString()}</td>
-        <td>${a.name}</td>
-        <td>${a.phone}</td>
-        <td>${a.service || a.reason || '—'}</td>
-        <td>${a.duration_minutes || 60} min</td>
+        <td style="white-space:nowrap;">${new Date(a.date_time).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})}<br><span style="font-size:12px;color:var(--muted)">${new Date(a.date_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></td>
+        <td><div class="name">${a.name}</div><div class="phone">${a.phone}</div></td>
+        <td>${a.service ? `<span class="service-tag">${a.service}</span>` : (a.reason || '—')}</td>
+        <td><span class="duration">${a.duration_minutes || 60} min</span></td>
         <td>${badge(a.status)}</td>
-        <td>${a.status === 'booked' ? `
-            <button class="action-btn" onclick="rescheduleAppointment(${a.id})">Reschedule</button>
-            <button class="action-btn" onclick="markStatus(${a.id},'completed')" style="color:var(--ok);">Complete</button>
-            <button class="action-btn" onclick="markStatus(${a.id},'no_show')">No Show</button>
-            <button class="action-btn danger" onclick="cancelAppointment(${a.id})">Cancel</button>
+        <td style="white-space:nowrap;">${a.status === 'booked' ? `
+            <button class="btn btn-sm" onclick="rescheduleAppointment(${a.id})" title="Reschedule">↻</button>
+            <button class="btn btn-sm btn-success" onclick="markStatus(${a.id},'completed')" title="Mark completed">✓</button>
+            <button class="btn btn-sm btn-warning" onclick="markStatus(${a.id},'no_show')" title="No show">✕</button>
+            <button class="btn btn-sm btn-danger" onclick="cancelAppointment(${a.id})" title="Cancel">✕ Cancel</button>
           ` : '—'}</td>
-      </tr>`).join('') : `<tr><td colspan="7" class="empty">No appointments match.</td></tr>`;
+      </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No appointments${list.length ? ' match your search.' : ' yet.'}</td></tr>`;
   }
 
   function filterAppointments(){
     const q = document.getElementById('searchBox').value.toLowerCase();
-    renderAppointments(allAppointments.filter(a => a.name.toLowerCase().includes(q) || a.phone.includes(q)));
+    document.querySelector('#apptTable tbody').querySelectorAll('tr').forEach(tr => {
+      tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
   }
 
   async function exportCSV(){
@@ -442,18 +570,40 @@
     loadAll();
   }
 
+  async function markStatus(id, status){
+    const labels = { completed: 'mark as Completed', no_show: 'mark as No Show' };
+    if(!confirm(`Are you sure you want to ${labels[status]}?`)) return;
+    showLoading();
+    await api(`/api/appointments/${id}`, 'PATCH', { status });
+    hideLoading();
+    loadAll();
+  }
+
+  async function loadAppointments(){
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    let path = '/api/appointments';
+    const params = [];
+    if(from) params.push('from='+from);
+    if(to) params.push('to='+to);
+    if(params.length) path += '?' + params.join('&');
+    const appts = await api(path);
+    allAppointments = appts.appointments || [];
+    renderAppointments(allAppointments);
+  }
+
   async function loadAll(){
     try {
       showLoading();
       const s = await api('/api/settings');
-      document.getElementById('clinicName').textContent = (s.clinic_name || 'Front Desk') + ' · Front Desk';
+      document.getElementById('clinicName').textContent = s.clinic_name || 'Front Desk';
 
       const summary = await api('/api/summary');
       document.getElementById('stats').innerHTML = `
-        <div class="stat"><div class="num">${summary.calls_today}</div><div class="label">Calls Today</div></div>
-        <div class="stat warn"><div class="num">${summary.missed_today}</div><div class="label">Missed Today</div></div>
-        <div class="stat"><div class="num">${summary.booked_today}</div><div class="label">Booked Today</div></div>
-        <div class="stat"><div class="num">${summary.upcoming_appointments}</div><div class="label">Upcoming</div></div>`;
+        <div class="stat-card"><div class="icon teal">📞</div><div class="info"><div class="num">${summary.calls_today}</div><div class="label">Calls Today</div></div></div>
+        <div class="stat-card"><div class="icon red">📵</div><div class="info"><div class="num">${summary.missed_today}</div><div class="label">Missed</div></div></div>
+        <div class="stat-card"><div class="icon green">✅</div><div class="info"><div class="num">${summary.booked_today}</div><div class="label">Booked Today</div></div></div>
+        <div class="stat-card"><div class="icon teal">📅</div><div class="info"><div class="num">${summary.upcoming_appointments}</div><div class="label">Upcoming</div></div></div>`;
 
       await loadAppointments();
 
@@ -462,20 +612,22 @@
       const callList = calls.calls || [];
       callsBody.innerHTML = callList.length ? callList.map(c => `
         <tr>
-          <td>${new Date(c.created_at).toLocaleString()}</td>
+          <td style="white-space:nowrap;">${new Date(c.created_at).toLocaleDateString([],{month:'short',day:'numeric'})}<br><span style="font-size:12px;color:var(--muted)">${new Date(c.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></td>
           <td>${c.caller_phone}</td>
           <td>${badge(c.call_status)}</td>
-          <td>${c.duration_seconds}s</td>
-          <td>${c.transcript_summary || '—'}</td>
-        </tr>`).join('') : `<tr><td colspan="5" class="empty">No calls logged yet.</td></tr>`;
+          <td>${c.duration_seconds ? c.duration_seconds + 's' : '—'}</td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${c.transcript_summary || '—'}</td>
+        </tr>`).join('') : `<tr><td colspan="5" class="empty-state">No calls logged yet.</td></tr>`;
       hideLoading();
     } catch(e){ console.error(e); hideLoading(); }
   }
 
   async function seedDemoData(){
-    if(!confirm('This will add sample patients, appointments, calls, and messages. Continue?')) return;
+    if(!confirm('This will add sample patients, appointments, and calls. Continue?')) return;
+    showLoading();
     const { ok, data } = await raw('/api/seed-demo', 'POST', null, true);
-    if(ok){ alert('Demo data seeded! Refreshing...'); loadAll(); }
+    hideLoading();
+    if(ok){ alert('Demo data seeded!'); loadAll(); }
     else { alert(data.error || 'Failed to seed data'); }
   }
 
