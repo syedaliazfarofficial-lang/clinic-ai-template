@@ -259,7 +259,7 @@ async function handleVapiWebhook(request, env) {
     const respond = (text) => (toolCallId ? json({ results: [{ toolCallId, result: text }] }) : json({ result: text }));
 
     if (fnName === "book_appointment") {
-      const { patient_name, phone, date_time, reason } = args;
+      const { patient_name, phone, date_time, reason, service, duration_minutes } = args;
 
       if (!patient_name || !phone || !date_time) {
         return respond("Missing patient name, phone, or date/time — could not book.");
@@ -280,8 +280,8 @@ async function handleVapiWebhook(request, env) {
         patient = await env.DB.prepare(`INSERT INTO patients (name, phone) VALUES (?, ?) RETURNING id`).bind(patient_name, phone).first();
       }
 
-      await env.DB.prepare(`INSERT INTO appointments (patient_id, date_time, reason) VALUES (?, ?, ?)`)
-        .bind(patient.id, date_time, reason || null)
+      await env.DB.prepare(`INSERT INTO appointments (patient_id, date_time, reason, service, duration_minutes) VALUES (?, ?, ?, ?, ?)`)
+        .bind(patient.id, date_time, reason || null, service || null, duration_minutes || 60)
         .run();
 
       await notify(env, { kind: "booked", patientName: patient_name, patientPhone: phone, dateTime: date_time });
@@ -318,7 +318,7 @@ async function handleVapiWebhook(request, env) {
       if (!phone) return respond("I need a phone number to look that up.");
 
       const { results } = await env.DB.prepare(
-        `SELECT a.date_time, a.reason FROM appointments a
+        `SELECT a.date_time, a.reason, a.service, a.duration_minutes FROM appointments a
          JOIN patients p ON a.patient_id = p.id
          WHERE p.phone = ? AND a.status = 'booked' ORDER BY a.date_time ASC`
       )
@@ -329,7 +329,7 @@ async function handleVapiWebhook(request, env) {
         return respond("I don't see any upcoming appointments under that number.");
       }
 
-      const list = results.map((r) => `${new Date(r.date_time).toLocaleString()} (${r.reason || "visit"})`).join("; ");
+      const list = results.map((r) => `${new Date(r.date_time).toLocaleString()} — ${r.service || r.reason || "visit"} (${r.duration_minutes || 60} min)`).join("; ");
       return respond(`Upcoming appointments: ${list}.`);
     }
 
@@ -460,17 +460,23 @@ async function handleRegenerateVapiSecret(env) {
 
 async function handleAppointments(request, env, url) {
   if (request.method === "GET") {
-    const { results } = await env.DB.prepare(
-      `SELECT a.id, a.date_time, a.status, a.reason, p.name, p.phone
-       FROM appointments a JOIN patients p ON a.patient_id = p.id
-       ORDER BY a.date_time DESC LIMIT 200`
-    ).all();
+    const from = url.searchParams.get("from");
+    const to = url.searchParams.get("to");
+    let sql = `SELECT a.id, a.date_time, a.status, a.reason, a.service, a.duration_minutes, p.name, p.phone
+       FROM appointments a JOIN patients p ON a.patient_id = p.id`;
+    const binds = [];
+    const wheres = [];
+    if (from) { wheres.push("date(a.date_time) >= date(?)"); binds.push(from); }
+    if (to) { wheres.push("date(a.date_time) <= date(?)"); binds.push(to); }
+    if (wheres.length) sql += " WHERE " + wheres.join(" AND ");
+    sql += " ORDER BY a.date_time DESC LIMIT 200";
+    const { results } = await env.DB.prepare(sql).bind(...binds).all();
     return json({ appointments: results });
   }
 
   if (request.method === "POST") {
     const body = await request.json();
-    const { patient_name, phone, date_time, reason } = body;
+    const { patient_name, phone, date_time, reason, service, duration_minutes } = body;
 
     if (!patient_name || !phone || !date_time || isNaN(Date.parse(date_time))) {
       return json({ error: "patient_name, phone, and a valid date_time are required" }, 400);
@@ -486,8 +492,8 @@ async function handleAppointments(request, env, url) {
       patient = await env.DB.prepare(`INSERT INTO patients (name, phone) VALUES (?, ?) RETURNING id`).bind(patient_name, phone).first();
     }
 
-    const appt = await env.DB.prepare(`INSERT INTO appointments (patient_id, date_time, reason) VALUES (?, ?, ?) RETURNING id`)
-      .bind(patient.id, date_time, reason || null)
+    const appt = await env.DB.prepare(`INSERT INTO appointments (patient_id, date_time, reason, service, duration_minutes) VALUES (?, ?, ?, ?, ?) RETURNING id`)
+      .bind(patient.id, date_time, reason || null, service || null, duration_minutes || 60)
       .first();
 
     return json({ id: appt.id }, 201);
@@ -496,8 +502,16 @@ async function handleAppointments(request, env, url) {
   const idMatch = url.pathname.match(/\/api\/appointments\/(\d+)/);
 
   if (request.method === "PATCH" && idMatch) {
-    const { status } = await request.json();
-    await env.DB.prepare(`UPDATE appointments SET status = ? WHERE id = ?`).bind(status, idMatch[1]).run();
+    const { status, service, duration_minutes } = await request.json();
+    const sets = [];
+    const vals = [];
+    if (status) { sets.push("status = ?"); vals.push(status); }
+    if (service !== undefined) { sets.push("service = ?"); vals.push(service); }
+    if (duration_minutes !== undefined) { sets.push("duration_minutes = ?"); vals.push(duration_minutes); }
+    if (sets.length) {
+      vals.push(idMatch[1]);
+      await env.DB.prepare(`UPDATE appointments SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
+    }
 
     if (status === "cancelled") {
       const appt = await env.DB.prepare(
@@ -509,8 +523,13 @@ async function handleAppointments(request, env, url) {
   }
 
   if (request.method === "PUT" && idMatch) {
-    const { date_time } = await request.json();
-    await env.DB.prepare(`UPDATE appointments SET date_time = ? WHERE id = ?`).bind(date_time, idMatch[1]).run();
+    const { date_time, service, duration_minutes } = await request.json();
+    const sets = ["date_time = ?"];
+    const vals = [date_time];
+    if (service !== undefined) { sets.push("service = ?"); vals.push(service); }
+    if (duration_minutes !== undefined) { sets.push("duration_minutes = ?"); vals.push(duration_minutes); }
+    vals.push(idMatch[1]);
+    await env.DB.prepare(`UPDATE appointments SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
 
     const appt = await env.DB.prepare(
       `SELECT p.name, p.phone FROM appointments a JOIN patients p ON a.patient_id = p.id WHERE a.id = ?`
@@ -550,13 +569,13 @@ async function handleSummary(env) {
 
 async function handleExport(env) {
   const { results } = await env.DB.prepare(
-    `SELECT a.id, a.date_time, a.status, a.reason, p.name, p.phone, p.email
+    `SELECT a.id, a.date_time, a.status, a.reason, a.service, a.duration_minutes, p.name, p.phone, p.email
      FROM appointments a JOIN patients p ON a.patient_id = p.id ORDER BY a.date_time DESC`
   ).all();
 
-  const header = "id,date_time,status,reason,patient_name,phone,email\n";
+  const header = "id,date_time,status,service,duration_min,reason,patient_name,phone,email\n";
   const rows = results
-    .map((r) => [r.id, r.date_time, r.status, r.reason || "", r.name, r.phone, r.email || ""]
+    .map((r) => [r.id, r.date_time, r.status, r.service || "", r.duration_minutes || 60, r.reason || "", r.name, r.phone, r.email || ""]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
     .join("\n");
 
@@ -628,23 +647,24 @@ async function handleSeedDemo(env) {
     return d.toISOString().slice(0, 19);
   };
 
+  const serviceList = ['Cleaning', 'Fillings', 'Root Canal', 'Checkup', 'Whitening', 'Crown', 'Extraction', 'Consultation'];
   const appointments = [
-    { patient: 'James Mitchell', date: day(1, 9), status: 'booked', reason: 'Routine cleaning' },
-    { patient: 'Sarah Thompson', date: day(1, 10), status: 'booked', reason: 'Fillings' },
-    { patient: 'Michael Chen', date: day(1, 14), status: 'booked', reason: 'Root canal consultation' },
-    { patient: 'Emily Rodriguez', date: day(2, 9), status: 'booked', reason: 'Teeth whitening' },
-    { patient: 'David Park', date: day(2, 11), status: 'booked', reason: 'Annual checkup' },
-    { patient: 'Lisa Johnson', date: day(2, 15), status: 'booked', reason: 'Crown fitting' },
-    { patient: 'James Mitchell', date: day(-5, 10), status: 'completed', reason: 'Cleaning' },
-    { patient: 'Sarah Thompson', date: day(-3, 14), status: 'completed', reason: 'X-rays and exam' },
-    { patient: 'Michael Chen', date: day(-7, 9), status: 'cancelled', reason: 'Consultation' },
-    { patient: 'Emily Rodriguez', date: day(-1, 11), status: 'no_show', reason: 'Follow-up' },
+    { patient: 'James Mitchell', date: day(1, 9), status: 'booked', reason: 'Routine cleaning', service: 'Cleaning', dur: 30 },
+    { patient: 'Sarah Thompson', date: day(1, 10), status: 'booked', reason: 'Fillings', service: 'Fillings', dur: 60 },
+    { patient: 'Michael Chen', date: day(1, 14), status: 'booked', reason: 'Root canal consultation', service: 'Consultation', dur: 45 },
+    { patient: 'Emily Rodriguez', date: day(2, 9), status: 'booked', reason: 'Teeth whitening', service: 'Whitening', dur: 60 },
+    { patient: 'David Park', date: day(2, 11), status: 'booked', reason: 'Annual checkup', service: 'Checkup', dur: 30 },
+    { patient: 'Lisa Johnson', date: day(2, 15), status: 'booked', reason: 'Crown fitting', service: 'Crown', dur: 60 },
+    { patient: 'James Mitchell', date: day(-5, 10), status: 'completed', reason: 'Cleaning', service: 'Cleaning', dur: 30 },
+    { patient: 'Sarah Thompson', date: day(-3, 14), status: 'completed', reason: 'X-rays and exam', service: 'Checkup', dur: 45 },
+    { patient: 'Michael Chen', date: day(-7, 9), status: 'cancelled', reason: 'Consultation', service: 'Consultation', dur: 30 },
+    { patient: 'Emily Rodriguez', date: day(-1, 11), status: 'no_show', reason: 'Follow-up', service: 'Checkup', dur: 30 },
   ];
   for (const a of appointments) {
     const id = pid(a.patient);
     if (!id) continue;
-    await env.DB.prepare(`INSERT INTO appointments (patient_id, date_time, status, reason) VALUES (?, ?, ?, ?)`)
-      .bind(id, a.date, a.status, a.reason).run();
+    await env.DB.prepare(`INSERT INTO appointments (patient_id, date_time, status, reason, service, duration_minutes) VALUES (?, ?, ?, ?, ?, ?)`)
+      .bind(id, a.date, a.status, a.reason, a.service, a.dur).run();
   }
 
   // Seed call logs

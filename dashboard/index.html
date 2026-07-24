@@ -33,7 +33,12 @@
   .badge.cancelled, .badge.no_show{background:#F0E9E2;color:#8A7B60;}
   .empty{color:#8A7B60;font-style:italic;padding:20px 8px;}
   #gate{max-width:400px;margin:100px auto;text-align:center;}
-  #gate input, .form-grid input, .search-row input, .settings-row input{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:2px;margin:8px 0;font-family:'Helvetica Neue',Arial,sans-serif;}
+  #gate input, .form-grid input, .form-grid select, .search-row input, .settings-row input{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:2px;margin:8px 0;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:spin .6s linear infinite;margin-left:8px;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(246,243,236,0.7);display:none;align-items:center;justify-content:center;z-index:999;}
+  .loading-overlay.show{display:flex;}
+  .loading-overlay .spinner{width:32px;height:32px;border-width:3px;}
   #gate button, .refresh{background:var(--teal);color:#fff;border:none;padding:10px 20px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;letter-spacing:0.04em;border-radius:2px;cursor:pointer;}
   #gate button:hover, .refresh:hover{background:var(--teal-deep);}
   .refresh-row{display:flex;justify-content:flex-end;margin:16px 0;gap:10px;}
@@ -82,12 +87,14 @@
   </div>
 </div>
 
-<div id="app" style="display:none;">
-  <div class="topbar">
-    <h1 id="clinicName">Front Desk</h1>
-    <span class="tag" onclick="toggleSettingsPanel()">Backend Settings</span>
-  </div>
-  <div class="wrap">
+  <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+  <div id="app" style="display:none;">
+    <div class="topbar">
+      <h1 id="clinicName">Front Desk</h1>
+      <span class="tag" onclick="toggleSettingsPanel()">Backend Settings</span>
+    </div>
+    <div class="wrap">
 
     <div id="settingsPanel">
       <section>
@@ -157,15 +164,33 @@
             <input type="text" id="fName" placeholder="Patient name" />
             <input type="tel" id="fPhone" placeholder="Phone (+1...)" />
             <input type="datetime-local" id="fDateTime" />
-            <input type="text" id="fReason" placeholder="Reason (optional)" />
+            <select id="fService">
+              <option value="">Service type...</option>
+              <option>Cleaning</option>
+              <option>Checkup</option>
+              <option>Filling</option>
+              <option>Root Canal</option>
+              <option>Extraction</option>
+              <option>Crown</option>
+              <option>Whitening</option>
+              <option>Consultation</option>
+              <option>Other</option>
+            </select>
+            <input type="text" id="fReason" placeholder="Reason / notes (optional)" />
+            <input type="number" id="fDuration" placeholder="Duration (min)" value="30" min="15" max="180" />
           </div>
           <div class="refresh-row"><button class="refresh" onclick="submitNewAppointment()">Save Appointment</button></div>
         </div>
 
-        <div class="search-row"><input type="text" id="searchBox" placeholder="Search by patient name or phone..." oninput="filterAppointments()" /></div>
+        <div class="search-row">
+          <input type="date" id="filterFrom" onchange="loadAppointments()" style="width:auto;" />
+          <span style="color:var(--line);">–</span>
+          <input type="date" id="filterTo" onchange="loadAppointments()" style="width:auto;" />
+          <input type="text" id="searchBox" placeholder="Search by name or phone..." oninput="filterAppointments()" style="flex:1;" />
+        </div>
 
         <table id="apptTable">
-          <thead><tr><th>Date/Time</th><th>Patient</th><th>Phone</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Date/Time</th><th>Patient</th><th>Phone</th><th>Service</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </section>
@@ -317,18 +342,49 @@
 
   function toggleForm(){ document.getElementById('apptForm').classList.toggle('open'); }
 
+  function showLoading(){ document.getElementById('loadingOverlay').classList.add('show'); }
+  function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('show'); }
+
+  async function markStatus(id, status){
+    const labels = { completed: 'mark this as Completed', no_show: 'mark as No Show' };
+    if(!confirm(`Are you sure you want to ${labels[status] || 'update'}?`)) return;
+    showLoading();
+    await api(`/api/appointments/${id}`, 'PATCH', { status });
+    hideLoading();
+    loadAll();
+  }
+
+  async function loadAppointments(){
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    let path = '/api/appointments';
+    const params = [];
+    if(from) params.push('from='+from);
+    if(to) params.push('to='+to);
+    if(params.length) path += '?' + params.join('&');
+    const appts = await api(path);
+    allAppointments = appts.appointments || [];
+    renderAppointments(allAppointments);
+  }
+
   async function submitNewAppointment(){
     const patient_name = document.getElementById('fName').value.trim();
     const phone = document.getElementById('fPhone').value.trim();
     const date_time = document.getElementById('fDateTime').value;
     const reason = document.getElementById('fReason').value.trim();
+    const service = document.getElementById('fService').value;
+    const duration_minutes = parseInt(document.getElementById('fDuration').value) || 30;
     if(!patient_name || !phone || !date_time){ alert('Name, phone, and date/time are required.'); return; }
-    const res = await api('/api/appointments', 'POST', { patient_name, phone, date_time, reason });
+    showLoading();
+    const res = await api('/api/appointments', 'POST', { patient_name, phone, date_time, reason, service, duration_minutes });
+    hideLoading();
     if(res.error){ alert(res.error); return; }
     document.getElementById('fName').value = '';
     document.getElementById('fPhone').value = '';
     document.getElementById('fDateTime').value = '';
     document.getElementById('fReason').value = '';
+    document.getElementById('fService').value = '';
+    document.getElementById('fDuration').value = '30';
     document.getElementById('apptForm').classList.remove('open');
     loadAll();
   }
@@ -342,13 +398,16 @@
         <td>${new Date(a.date_time).toLocaleString()}</td>
         <td>${a.name}</td>
         <td>${a.phone}</td>
-        <td>${a.reason || '—'}</td>
+        <td>${a.service || a.reason || '—'}</td>
+        <td>${a.duration_minutes || 60} min</td>
         <td>${badge(a.status)}</td>
         <td>${a.status === 'booked' ? `
             <button class="action-btn" onclick="rescheduleAppointment(${a.id})">Reschedule</button>
+            <button class="action-btn" onclick="markStatus(${a.id},'completed')" style="color:var(--ok);">Complete</button>
+            <button class="action-btn" onclick="markStatus(${a.id},'no_show')">No Show</button>
             <button class="action-btn danger" onclick="cancelAppointment(${a.id})">Cancel</button>
           ` : '—'}</td>
-      </tr>`).join('') : `<tr><td colspan="6" class="empty">No appointments match.</td></tr>`;
+      </tr>`).join('') : `<tr><td colspan="7" class="empty">No appointments match.</td></tr>`;
   }
 
   function filterAppointments(){
@@ -368,19 +427,24 @@
 
   async function cancelAppointment(id){
     if(!confirm('Cancel this appointment? The patient will be notified.')) return;
+    showLoading();
     await api(`/api/appointments/${id}`, 'PATCH', { status: 'cancelled' });
+    hideLoading();
     loadAll();
   }
 
   async function rescheduleAppointment(id){
     const newTime = prompt('New date/time (e.g. 2026-07-30T14:00):');
     if(!newTime) return;
+    showLoading();
     await api(`/api/appointments/${id}`, 'PUT', { date_time: newTime });
+    hideLoading();
     loadAll();
   }
 
   async function loadAll(){
     try {
+      showLoading();
       const s = await api('/api/settings');
       document.getElementById('clinicName').textContent = (s.clinic_name || 'Front Desk') + ' · Front Desk';
 
@@ -391,9 +455,7 @@
         <div class="stat"><div class="num">${summary.booked_today}</div><div class="label">Booked Today</div></div>
         <div class="stat"><div class="num">${summary.upcoming_appointments}</div><div class="label">Upcoming</div></div>`;
 
-      const appts = await api('/api/appointments');
-      allAppointments = appts.appointments || [];
-      renderAppointments(allAppointments);
+      await loadAppointments();
 
       const calls = await api('/api/calls');
       const callsBody = document.querySelector('#callsTable tbody');
@@ -406,7 +468,8 @@
           <td>${c.duration_seconds}s</td>
           <td>${c.transcript_summary || '—'}</td>
         </tr>`).join('') : `<tr><td colspan="5" class="empty">No calls logged yet.</td></tr>`;
-    } catch(e){ console.error(e); }
+      hideLoading();
+    } catch(e){ console.error(e); hideLoading(); }
   }
 
   async function seedDemoData(){

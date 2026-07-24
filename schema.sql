@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS appointments (
   date_time TEXT NOT NULL,           -- ISO 8601, e.g. 2026-07-25T14:30:00
   status TEXT NOT NULL DEFAULT 'booked',  -- booked | cancelled | completed | no_show
   reason TEXT,
+  service TEXT,
+  duration_minutes INTEGER DEFAULT 60,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (patient_id) REFERENCES patients(id)
 );
